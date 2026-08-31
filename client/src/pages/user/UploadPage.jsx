@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { contentService } from '../../services/contentService.js';
@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button.jsx';
 import { Card } from '../../components/ui/Card.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import { Tabs } from '../../components/ui/Tabs.jsx';
+import { ProgressBar } from '../../components/ui/ProgressBar.jsx';
 import {
   UploadCloud,
   Mic,
@@ -15,9 +16,19 @@ import {
   File,
   X,
   Sparkles,
-  AlertCircle
+  AlertCircle,
+  CheckCircle2,
+  Ban
 } from 'lucide-react';
 import { formatBytes } from '../../utils/formatters.js';
+
+const LIMITS = {
+  AUDIO: { maxSize: 100 * 1024 * 1024, label: '100 MB', accept: '.mp3,.wav,.m4a,.aac,.ogg,.flac' },
+  VIDEO: { maxSize: 500 * 1024 * 1024, label: '500 MB', accept: '.mp4,.webm,.mov,.mkv' },
+  DOCUMENT: { maxSize: 50 * 1024 * 1024, label: '50 MB', accept: '.txt,.pdf,.docx,.doc' },
+  TEXT: { maxChars: 100000, label: '100,000 chars' },
+  LINK: { label: 'Direct HTTPS media link' }
+};
 
 export function UploadPage() {
   const navigate = useNavigate();
@@ -27,8 +38,13 @@ export function UploadPage() {
   const [activeTab, setActiveTab] = useState(initialType);
   const [selectedFile, setSelectedFile] = useState(null);
   const [dragActive, setDragActive] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
-  const { register, handleSubmit, formState: { isSubmitting } } = useForm();
+  const abortControllerRef = useRef(null);
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm();
 
   const tabs = [
     { id: 'AUDIO', label: 'Audio', icon: Mic },
@@ -38,9 +54,26 @@ export function UploadPage() {
     { id: 'TEXT', label: 'Raw Text', icon: File }
   ];
 
+  const validateSelectedFile = (file, tab) => {
+    setErrorMessage('');
+    if (!file) return false;
+
+    const limit = LIMITS[tab];
+    if (limit && limit.maxSize && file.size > limit.maxSize) {
+      setErrorMessage(`File exceeds maximum allowed size of ${limit.label} for ${tab}. Current file: ${formatBytes(file.size)}.`);
+      return false;
+    }
+    return true;
+  };
+
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+      const file = e.target.files[0];
+      if (validateSelectedFile(file, activeTab)) {
+        setSelectedFile(file);
+      } else {
+        e.target.value = null;
+      }
     }
   };
 
@@ -48,23 +81,94 @@ export function UploadPage() {
     e.preventDefault();
     setDragActive(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setSelectedFile(e.dataTransfer.files[0]);
+      const file = e.dataTransfer.files[0];
+      if (validateSelectedFile(file, activeTab)) {
+        setSelectedFile(file);
+      }
+    }
+  };
+
+  const handleCancelUpload = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      setIsUploading(false);
+      setUploadProgress(0);
+      setErrorMessage('Upload cancelled by user.');
     }
   };
 
   const onSubmit = async (data) => {
-    const payload = {
-      type: activeTab,
-      title: data.title || selectedFile?.name || 'Untitled Upload',
-      description: data.description,
-      file: selectedFile,
-      url: data.url,
-      tags: data.tags ? data.tags.split(',').map((t) => t.trim()) : ['Upload']
-    };
+    setErrorMessage('');
+    setSuccessMessage('');
+    setIsUploading(true);
+    setUploadProgress(0);
 
-    const res = await contentService.uploadContent(payload);
-    // Navigate to simulated processing screen
-    navigate(`/processing/${res.data.id}`);
+    abortControllerRef.current = new AbortController();
+
+    try {
+      let res;
+      if (activeTab === 'TEXT') {
+        if (!data.rawText || data.rawText.trim().length === 0) {
+          setErrorMessage('Raw text content cannot be empty.');
+          setIsUploading(false);
+          return;
+        }
+        res = await contentService.submitText({
+          title: data.title || 'Verbatim Discussion Notes',
+          text: data.rawText,
+          description: data.description || '',
+          tags: data.tags
+        });
+      } else if (activeTab === 'LINK') {
+        if (!data.url || !data.url.startsWith('http')) {
+          setErrorMessage('Please enter a valid HTTP or HTTPS media URL.');
+          setIsUploading(false);
+          return;
+        }
+        res = await contentService.submitUrl({
+          title: data.title || 'Linked Media Stream',
+          url: data.url,
+          description: data.description || '',
+          tags: data.tags
+        });
+      } else {
+        if (!selectedFile) {
+          setErrorMessage('Please select a file to upload.');
+          setIsUploading(false);
+          return;
+        }
+        res = await contentService.uploadFile(
+          {
+            file: selectedFile,
+            title: data.title || selectedFile.name,
+            description: data.description || '',
+            tags: data.tags
+          },
+          (progress) => setUploadProgress(progress),
+          abortControllerRef.current.signal
+        );
+      }
+
+      setUploadProgress(100);
+      setSuccessMessage('Content successfully ingested into WrapAI repository!');
+      
+      // Short delay for user to see 100% completion before navigation
+      setTimeout(() => {
+        if (res && res.data && res.data.id) {
+          navigate(`/content`);
+        } else {
+          navigate('/content');
+        }
+      }, 1000);
+    } catch (err) {
+      if (err.name === 'CanceledError' || err.message?.includes('canceled')) {
+        setErrorMessage('Upload was cancelled.');
+      } else {
+        setErrorMessage(err.message || 'Failed to upload content. Please try again.');
+      }
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -75,12 +179,35 @@ export function UploadPage() {
           Upload & Ingest Content
         </h1>
         <p className="text-xs text-brand-taupe mt-1">
-          Supported formats: MP3, WAV, M4A, MP4, MOV, TXT documents, or supported media URLs.
+          Supported formats: Audio (MP3, WAV, M4A, AAC), Video (MP4, MOV, WebM), Documents (TXT, PDF, DOCX), or Remote URLs.
         </p>
       </div>
 
+      {errorMessage && (
+        <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-xs flex items-center space-x-2">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center space-x-2">
+          <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+          <span>{successMessage}</span>
+        </div>
+      )}
+
       <Card className="p-8">
-        <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} className="mb-8" />
+        <Tabs
+          tabs={tabs}
+          activeTab={activeTab}
+          onChange={(tab) => {
+            setActiveTab(tab);
+            setSelectedFile(null);
+            setErrorMessage('');
+          }}
+          className="mb-8"
+        />
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* File Upload Zone for AUDIO, VIDEO, DOCUMENT */}
@@ -100,7 +227,7 @@ export function UploadPage() {
                     Drag and drop your {activeTab.toLowerCase()} file here
                   </p>
                   <p className="text-xs text-brand-taupe mb-4">
-                    Maximum file size: 500 MB (Direct-to-S3 signed storage)
+                    Maximum file size: {LIMITS[activeTab]?.label} (Direct S3 Object Storage)
                   </p>
                   <label className="cursor-pointer">
                     <span className="inline-flex items-center px-4 py-2 bg-brand-navy text-brand-white text-xs font-bold uppercase tracking-wider hover:bg-brand-charcoal">
@@ -110,13 +237,7 @@ export function UploadPage() {
                       type="file"
                       className="hidden"
                       onChange={handleFileChange}
-                      accept={
-                        activeTab === 'AUDIO'
-                          ? 'audio/*'
-                          : activeTab === 'VIDEO'
-                          ? 'video/*'
-                          : '.txt,.doc,.docx'
-                      }
+                      accept={LIMITS[activeTab]?.accept}
                     />
                   </label>
                 </div>
@@ -124,7 +245,7 @@ export function UploadPage() {
                 /* Selected File Preview */
                 <div className="p-4 bg-brand-light border border-brand-navy flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <File className="w-6 h-6 text-brand-navy" />
+                    <File className="w-6 h-6 text-brand-navy flex-shrink-0" />
                     <div>
                       <p className="text-xs font-bold text-brand-navy">{selectedFile.name}</p>
                       <p className="text-[10px] font-mono text-brand-taupe">
@@ -132,13 +253,15 @@ export function UploadPage() {
                       </p>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedFile(null)}
-                    className="p-1 text-brand-taupe hover:text-red-600"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
+                  {!isUploading && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedFile(null)}
+                      className="p-1 text-brand-taupe hover:text-red-600"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -149,7 +272,7 @@ export function UploadPage() {
             <Input
               label="Remote Multimedia URL"
               icon={Link2}
-              placeholder="https://youtube.com/watch?v=... or direct MP3/MP4 link"
+              placeholder="https://example.com/audio/meeting.mp3 or video link"
               {...register('url')}
             />
           )}
@@ -158,14 +281,37 @@ export function UploadPage() {
           {activeTab === 'TEXT' && (
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-brand-charcoal mb-1.5">
-                Paste Raw Text / Transcript
+                Paste Raw Text / Transcript (Max 100,000 chars)
               </label>
               <textarea
-                rows={6}
-                placeholder="Paste verbatim discussion, meeting transcript, or notes..."
+                rows={7}
+                placeholder="Paste verbatim discussion, meeting transcript, or unstructured notes..."
                 className="w-full bg-brand-white border border-brand-charcoal/20 p-4 text-sm text-brand-navy focus:outline-none focus:border-brand-navy font-mono"
                 {...register('rawText')}
               />
+            </div>
+          )}
+
+          {/* Upload Progress Bar */}
+          {isUploading && (
+            <div className="space-y-2 p-4 bg-brand-light border border-brand-charcoal/15">
+              <div className="flex justify-between items-center text-xs font-mono font-bold text-brand-navy">
+                <span>Uploading & Storing Media...</span>
+                <span>{uploadProgress}%</span>
+              </div>
+              <ProgressBar progress={uploadProgress} />
+              <div className="flex justify-end pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  icon={Ban}
+                  onClick={handleCancelUpload}
+                  className="text-red-600 border-red-300 hover:bg-red-50"
+                >
+                  Cancel Upload
+                </Button>
+              </div>
             </div>
           )}
 
@@ -173,12 +319,12 @@ export function UploadPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-brand-charcoal/10">
             <Input
               label="Content Title (Optional)"
-              placeholder="e.g. Q3 Engineering Architecture Sync"
+              placeholder="e.g. Q3 Engineering Sync"
               {...register('title')}
             />
             <Input
               label="Tags (Comma separated)"
-              placeholder="Engineering, Database, Sprint"
+              placeholder="Engineering, Storage, Review"
               {...register('tags')}
             />
           </div>
@@ -189,10 +335,10 @@ export function UploadPage() {
               variant="primary"
               size="lg"
               icon={Sparkles}
-              isLoading={isSubmitting}
-              disabled={!selectedFile && activeTab !== 'LINK' && activeTab !== 'TEXT'}
+              isLoading={isUploading}
+              disabled={isUploading || (!selectedFile && activeTab !== 'LINK' && activeTab !== 'TEXT')}
             >
-              Start Processing
+              {isUploading ? 'Ingesting...' : 'Ingest Content'}
             </Button>
           </div>
         </form>

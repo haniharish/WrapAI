@@ -13,8 +13,27 @@ export const contentRepository = {
     return Content.findOneAndUpdate({ _id: id, isDeleted: false }, updates, { new: true, runValidators: true });
   },
 
-  async softDeleteById(id) {
-    return Content.findByIdAndUpdate(id, { isDeleted: true }, { new: true });
+  async softDeleteById(id, userId = null) {
+    const filter = { _id: id };
+    if (userId) filter.userId = userId;
+    return Content.findOneAndUpdate(filter, { isDeleted: true, deletedAt: new Date() }, { new: true });
+  },
+
+  async softDelete(id, userId = null) {
+    return this.softDeleteById(id, userId);
+  },
+
+  async find(filter = {}, options = {}) {
+    let q = Content.find(filter);
+    if (options.sort) q = q.sort(options.sort);
+    if (options.skip) q = q.skip(options.skip);
+    if (options.limit) q = q.limit(options.limit);
+    if (options.populate) q = q.populate(options.populate);
+    return q.exec();
+  },
+
+  async count(filter = {}) {
+    return Content.countDocuments(filter);
   },
 
   async findByUser(userId, { skip = 0, limit = 20, search = '', type = null, status = null, sortBy = 'newest' } = {}) {

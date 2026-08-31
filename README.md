@@ -11,6 +11,7 @@ WrapAI is an AI-powered content intelligence platform that transforms multi-moda
 - **Phase 2: Node.js + Express Backend Foundation** (Layered architecture, JWT Auth, RBAC, Ownership guards, Swagger docs, Jest & Supertest integration tests)
 - **Phase 3: MongoDB Atlas Database & Schemas** (12 production Mongoose models, referenced transcript streams, diarization cascade, intelligence models, aggregation pipelines, development seed CLI)
 - **Phase 4: Authentication, Authorization & Integration** (Short-lived JWTs, rotated HttpOnly refresh cookies, bcrypt 12 rounds, account status gates, profile/password management, Axios automatic refresh interceptors)
+- **Phase 5: File Upload, Object Storage & Content Ingestion** (AWS S3 object storage abstraction, offline local fallback, multi-modal ingestion: Audio/Video/Docs/Text/URLs, upload progress % tracking, temporary signed presigned access URLs, user storage quota enforcement)
 
 ---
 
@@ -56,7 +57,8 @@ wrapAI/
 │   ├── WRAPAI_ARCHITECTURE_BLUEPRINT.md
 │   ├── phase-2-backend.md
 │   ├── phase-3-database.md
-│   └── phase-4-authentication.md
+│   ├── phase-4-authentication.md
+│   └── phase-5-file-upload.md
 ├── client/                      # React 18 Single Page Application
 │   ├── src/
 │   │   ├── components/          # Reusable UI, Layout, Media, and Common components
@@ -75,16 +77,16 @@ wrapAI/
 │   │   ├── constants/           # Roles, status codes, content types
 │   │   ├── controllers/         # Request/response controllers
 │   │   ├── database/            # Database seed CLI & migration routines
-│   │   ├── middlewares/         # Auth, RBAC, Ownership, Validation, Rate limiter, Errors
+│   │   ├── middlewares/         # Auth, RBAC, Ownership, Validation, Rate limiter, Upload multer
 │   │   ├── models/              # 12 Mongoose schemas (User, Content, Transcript, Segment, Speaker, etc.)
 │   │   ├── repositories/        # Database query abstractions & aggregations
 │   │   ├── routes/              # Modular Express routes
-│   │   ├── services/            # Pure business logic services (Auth, User, Transcript, Intelligence, etc.)
+│   │   ├── services/            # Pure business logic services (Auth, User, Storage, Content, etc.)
 │   │   ├── utils/               # ApiError, responseHandler, logger
 │   │   ├── validators/          # Input schema validation
 │   │   ├── app.js               # Express application configuration
 │   │   └── server.js            # Server listener & database bootstrap
-│   ├── tests/                   # 11 Jest + Supertest test suites (36 tests)
+│   ├── tests/                   # 12 Jest + Supertest test suites (43 tests)
 │   ├── package.json
 │   └── .env.example
 └── README.md
@@ -98,7 +100,7 @@ wrapAI/
 - [x] **Phase 2**: Node.js + Express Backend Foundation
 - [x] **Phase 3**: MongoDB Atlas Database & Schemas
 - [x] **Phase 4**: Authentication & RBAC (JWT / bcrypt / Refresh Cookies)
-- [ ] **Phase 5**: File Upload & Object Storage (S3 / Cloudinary)
+- [x] **Phase 5**: File Upload & Object Storage (S3 / Storage Abstraction)
 - [ ] **Phase 6**: Redis & BullMQ Processing Infrastructure
 - [ ] **Phase 7**: Speech-to-Text (Whisper)
 - [ ] **Phase 8**: Speaker Diarization & Timestamp Alignment (pyannote)

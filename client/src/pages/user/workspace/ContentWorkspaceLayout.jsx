@@ -61,6 +61,21 @@ export function ContentWorkspaceLayout() {
     return <LoadingState message="Loading intelligence workspace..." />;
   }
 
+  if (!content) {
+    return (
+      <div className="bg-brand-white border border-brand-charcoal/15 p-8 text-center space-y-4">
+        <h2 className="font-display text-2xl uppercase text-brand-navy">Content Not Found</h2>
+        <p className="text-xs text-brand-taupe">The requested content item could not be retrieved.</p>
+        <button
+          onClick={() => navigate('/content')}
+          className="px-4 py-2 bg-brand-navy text-white text-xs uppercase font-bold tracking-wider"
+        >
+          Back to My Content
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Workspace Header Info */}

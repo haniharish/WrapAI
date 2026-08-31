@@ -3,8 +3,9 @@ import { config } from '../config/environment.js';
 import { ApiError } from '../utils/ApiError.js';
 
 export const globalLimiter = rateLimit({
-  windowMs: config.rateLimit.windowMs,
-  max: config.rateLimit.max,
+  windowMs: config.rateLimit?.windowMs || 15 * 60 * 1000,
+  max: config.rateLimit?.max || 100,
+  skip: () => config.nodeEnv === 'test',
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res, next) => {
@@ -14,7 +15,8 @@ export const globalLimiter = rateLimit({
 
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: config.rateLimit.authMax,
+  max: config.authRateLimit?.max || 50,
+  skip: () => config.nodeEnv === 'test',
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res, next) => {

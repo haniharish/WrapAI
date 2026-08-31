@@ -14,18 +14,22 @@ import {
   Grid,
   List,
   UploadCloud,
-  MoreVertical,
   Trash2,
   Edit2,
   FileText,
   Clock,
-  ArrowRight
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  AlertCircle
 } from 'lucide-react';
-import { formatTimecode, formatDate } from '../../utils/formatters.js';
+import { formatTimecode, formatDate, formatBytes } from '../../utils/formatters.js';
 
 export function MyContentPage() {
   const [contentList, setContentList] = useState([]);
+  const [pagination, setPagination] = useState({ page: 1, limit: 12, total: 0, totalPages: 1 });
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -34,38 +38,58 @@ export function MyContentPage() {
   // Rename modal state
   const [renameModalItem, setRenameModalItem] = useState(null);
   const [newTitle, setNewTitle] = useState('');
+  const [isRenaming, setIsRenaming] = useState(false);
 
-  const loadData = async () => {
+  const loadData = async (page = 1) => {
     setIsLoading(true);
+    setError(null);
     try {
       const res = await contentService.getContentList({
+        page,
+        limit: pagination.limit,
         search,
         type: typeFilter,
         status: statusFilter
       });
-      setContentList(res.data);
+      setContentList(res.data || []);
+      if (res.meta) {
+        setPagination(res.meta);
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to load content');
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
+    loadData(1);
   }, [search, typeFilter, statusFilter]);
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this content item?')) {
-      await contentService.deleteContent(id);
-      loadData();
+    if (window.confirm('Are you sure you want to delete this content item? Stored object storage binaries will be released.')) {
+      try {
+        await contentService.deleteContent(id);
+        loadData(pagination.page);
+      } catch (err) {
+        alert(err.message || 'Failed to delete content');
+      }
     }
   };
 
   const handleRenameSubmit = async (e) => {
     e.preventDefault();
     if (!renameModalItem || !newTitle.trim()) return;
-    await contentService.updateContent(renameModalItem.id, { title: newTitle });
-    setRenameModalItem(null);
-    loadData();
+    setIsRenaming(true);
+    try {
+      await contentService.updateContent(renameModalItem.id, { title: newTitle.trim() });
+      setRenameModalItem(null);
+      loadData(pagination.page);
+    } catch (err) {
+      alert(err.message || 'Failed to rename content');
+    } finally {
+      setIsRenaming(false);
+    }
   };
 
   return (
@@ -90,7 +114,7 @@ export function MyContentPage() {
         <div className="w-full md:w-96">
           <Input
             icon={Search}
-            placeholder="Search by title or tags..."
+            placeholder="Search by title or filename..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -105,6 +129,7 @@ export function MyContentPage() {
               { value: 'AUDIO', label: 'Audio Files' },
               { value: 'VIDEO', label: 'Video Files' },
               { value: 'DOCUMENT', label: 'Documents' },
+              { value: 'TEXT', label: 'Raw Text' },
               { value: 'URL', label: 'Remote URLs' }
             ]}
           />
@@ -114,9 +139,10 @@ export function MyContentPage() {
             onChange={(e) => setStatusFilter(e.target.value)}
             options={[
               { value: 'ALL', label: 'All Statuses' },
-              { value: 'COMPLETED', label: 'Completed' },
+              { value: 'UPLOADED', label: 'Uploaded (Ready)' },
+              { value: 'QUEUED', label: 'Queued' },
               { value: 'PROCESSING', label: 'Processing' },
-              { value: 'QUEUED', label: 'Queued' }
+              { value: 'COMPLETED', label: 'Completed' }
             ]}
           />
 
@@ -138,6 +164,13 @@ export function MyContentPage() {
           </div>
         </div>
       </div>
+
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-xs flex items-center space-x-2">
+          <AlertCircle className="w-4 h-4" />
+          <span>{error}</span>
+        </div>
+      )}
 
       {/* Content Rendering */}
       {isLoading ? (
@@ -169,13 +202,17 @@ export function MyContentPage() {
                   </h3>
                 </Link>
 
-                <p className="text-xs text-brand-taupe line-clamp-2 mb-4">{item.description}</p>
+                <p className="text-xs text-brand-taupe line-clamp-2 mb-4">
+                  {item.description || (item.originalFileName ? `File: ${item.originalFileName}` : 'Ingested content asset.')}
+                </p>
               </div>
 
               <div className="pt-4 border-t border-brand-charcoal/10">
                 <div className="flex items-center justify-between mb-3 text-xs font-mono text-brand-charcoal">
-                  <span>{item.mediaDurationSeconds ? formatTimecode(item.mediaDurationSeconds) : 'Document'}</span>
-                  <span className="text-emerald-700 font-bold">{item.processingStatus}</span>
+                  <span>
+                    {item.fileSizeBytes ? formatBytes(item.fileSizeBytes) : (item.mediaDurationSeconds ? formatTimecode(item.mediaDurationSeconds) : 'Direct Text')}
+                  </span>
+                  <span className="text-emerald-700 font-bold uppercase">{item.processingStatus}</span>
                 </div>
 
                 <div className="flex items-center justify-between gap-2">
@@ -214,28 +251,67 @@ export function MyContentPage() {
           {contentList.map((item) => (
             <div key={item.id} className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-brand-light/60 transition-colors">
               <div className="flex items-start space-x-4">
-                <Badge variant={item.contentType === 'VIDEO' ? 'blue' : 'sage'}>
+                <Badge variant={item.contentType === 'VIDEO' ? 'blue' : item.contentType === 'AUDIO' ? 'sage' : 'beige'}>
                   {item.contentType}
                 </Badge>
                 <div>
                   <Link to={`/content/${item.id}`} className="font-display text-lg uppercase text-brand-navy hover:underline">
                     {item.title}
                   </Link>
-                  <p className="text-xs text-brand-taupe mt-0.5 line-clamp-1">{item.description}</p>
+                  <p className="text-xs text-brand-taupe mt-0.5 line-clamp-1">
+                    {item.originalFileName ? `${item.originalFileName} • ` : ''}{formatBytes(item.fileSizeBytes || 0)}
+                  </p>
                 </div>
               </div>
 
               <div className="flex items-center space-x-4">
-                <span className="text-xs font-mono text-brand-charcoal">
-                  {item.mediaDurationSeconds ? formatTimecode(item.mediaDurationSeconds) : 'Document'}
+                <span className="text-xs font-mono text-brand-charcoal uppercase font-bold text-emerald-700">
+                  {item.processingStatus}
                 </span>
                 <span className="text-xs font-mono text-brand-taupe">{formatDate(item.createdAt)}</span>
                 <Link to={`/content/${item.id}`}>
                   <Button variant="outline" size="sm">Open</Button>
                 </Link>
+                <button
+                  onClick={() => handleDelete(item.id)}
+                  className="p-1.5 text-brand-taupe hover:text-red-600"
+                  title="Delete"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between border-t border-brand-charcoal/15 pt-4">
+          <span className="text-xs font-mono text-brand-taupe">
+            Showing Page {pagination.page} of {pagination.totalPages} ({pagination.total} total items)
+          </span>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              icon={ChevronLeft}
+              disabled={pagination.page <= 1}
+              onClick={() => loadData(pagination.page - 1)}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              icon={ChevronRight}
+              iconPosition="right"
+              disabled={pagination.page >= pagination.totalPages}
+              onClick={() => loadData(pagination.page + 1)}
+            >
+              Next
+            </Button>
+          </div>
         </div>
       )}
 
@@ -251,12 +327,13 @@ export function MyContentPage() {
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             required
+            autoFocus
           />
           <div className="flex justify-end space-x-3 pt-4 border-t border-brand-charcoal/10">
             <Button type="button" variant="ghost" onClick={() => setRenameModalItem(null)}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary">
+            <Button type="submit" variant="primary" isLoading={isRenaming}>
               Save Title
             </Button>
           </div>

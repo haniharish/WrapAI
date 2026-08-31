@@ -35,11 +35,7 @@ ENV/
 .DS_Store
 Thumbs.db
 
-# IDE & Editor files
-.vscode/
-.idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# Local Storage / Uploads
+uploads/
+backend/uploads/
+

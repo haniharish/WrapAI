@@ -1,20 +1,26 @@
 import { Router } from 'express';
 import { contentController } from '../controllers/contentController.js';
 import { authenticate } from '../middlewares/authMiddleware.js';
-import { checkOwnership } from '../middlewares/ownershipMiddleware.js';
-import { contentRepository } from '../repositories/contentRepository.js';
+import { upload } from '../middlewares/uploadMiddleware.js';
 import { validate } from '../middlewares/validationMiddleware.js';
-import { validateCreateContent, validateUpdateContent } from '../validators/contentValidators.js';
+import {
+  validateTextSubmission,
+  validateUrlSubmission,
+  validateUpdateContent
+} from '../validators/contentValidators.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 const router = Router();
 router.use(authenticate);
 
-router.post('/', validate(validateCreateContent), asyncHandler(contentController.create));
 router.get('/', asyncHandler(contentController.list));
-
-router.get('/:id', checkOwnership((id) => contentRepository.findById(id)), asyncHandler(contentController.getById));
-router.patch('/:id', checkOwnership((id) => contentRepository.findById(id)), validate(validateUpdateContent), asyncHandler(contentController.update));
-router.delete('/:id', checkOwnership((id) => contentRepository.findById(id)), asyncHandler(contentController.delete));
+router.post('/', asyncHandler(contentController.create));
+router.post('/upload', upload.single('file'), asyncHandler(contentController.upload));
+router.post('/text', validate(validateTextSubmission), asyncHandler(contentController.createText));
+router.post('/url', validate(validateUrlSubmission), asyncHandler(contentController.createUrl));
+router.get('/:id', asyncHandler(contentController.getById));
+router.patch('/:id', validate(validateUpdateContent), asyncHandler(contentController.update));
+router.delete('/:id', asyncHandler(contentController.delete));
+router.get('/:id/access', asyncHandler(contentController.getAccess));
 
 export default router;

@@ -76,6 +76,15 @@ const contentSchema = new mongoose.Schema(
       type: String,
       default: null
     },
+    rawText: {
+      type: String,
+      default: null
+    },
+    storageProvider: {
+      type: String,
+      enum: ['AWS_S3', 'LOCAL_STORAGE'],
+      default: 'AWS_S3'
+    },
     storageKey: {
       type: String,
       default: null

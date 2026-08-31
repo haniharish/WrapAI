@@ -20,13 +20,20 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-xl' 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-brand-navy/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
-      <div className={`relative w-full ${maxWidth} bg-brand-white border border-brand-navy shadow-2xl p-6 sm:p-8 z-10 animate-in fade-in zoom-in-95 duration-200`}>
-        <div className="flex items-center justify-between pb-4 border-b border-brand-charcoal/15 mb-6">
-          <h3 className="font-display text-2xl uppercase tracking-wide text-brand-navy">{title}</h3>
+      <div
+        className="fixed inset-0 bg-[#141414]/70 backdrop-blur-xs transition-opacity duration-300 ease-linear"
+        onClick={onClose}
+      />
+      <div
+        className={`relative w-full ${maxWidth} bg-[#E3E2DE] border-2 border-[#141414] p-6 sm:p-8 z-10 duration-300 ease-linear`}
+      >
+        <div className="flex items-center justify-between pb-4 border-b border-[#C7C7C7] mb-6">
+          <h3 className="text-xl sm:text-2xl font-bold uppercase tracking-tight text-[#141414]">
+            {title}
+          </h3>
           <button
             onClick={onClose}
-            className="p-1 text-brand-taupe hover:text-brand-navy hover:bg-brand-sage/20 transition-colors"
+            className="p-1.5 text-[#7A7A7A] hover:text-[#141414] hover:bg-[#141414]/10 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -36,3 +43,5 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-xl' 
     </div>
   );
 }
+
+export default Modal;

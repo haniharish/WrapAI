@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { Button } from '../../components/ui/Button.jsx';
+import { PosterButton } from '../../components/ui/PosterButton.jsx';
 import { Input } from '../../components/ui/Input.jsx';
-import { Card } from '../../components/ui/Card.jsx';
-import { AmbientBackground } from '../../components/common/AmbientBackground.jsx';
-import { Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { emailPattern } from '../../utils/validators.js';
 
 export function ForgotPasswordPage() {
@@ -18,53 +16,62 @@ export function ForgotPasswordPage() {
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-80px)] flex items-center justify-center p-6 bg-brand-light">
-      <AmbientBackground />
-      <div className="relative z-10 w-full max-w-md">
-        <Card className="border border-brand-navy shadow-2xl p-8">
-          <div className="text-center mb-6">
-            <span className="font-display text-3xl uppercase tracking-wide text-brand-navy">Reset Password</span>
-            <p className="text-xs text-brand-taupe mt-1">We will send you instructions to recover your account</p>
-          </div>
+    <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-6 sm:p-12 bg-[#E3E2DE]">
+      <div className="w-full max-w-lg border border-[#C7C7C7] bg-white/70 p-8 sm:p-12 space-y-8">
+        <div className="space-y-2 border-b border-[#C7C7C7] pb-6">
+          <span className="font-mono text-xs font-bold text-[#1351AA] uppercase tracking-[0.2em] block">
+            RECOVERY
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-[#141414]">
+            RESET PASSWORD.
+          </h1>
+          <p className="text-xs font-mono text-[#7A7A7A] uppercase">
+            ENTER REGISTERED EMAIL TO RECEIVE RECOVERY INSTRUCTIONS
+          </p>
+        </div>
 
-          {submitted ? (
-            <div className="text-center py-6">
-              <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto mb-4" />
-              <p className="text-sm font-bold text-brand-navy">Reset Link Dispatched</p>
-              <p className="text-xs text-brand-taupe mt-1 mb-6">
-                If an account exists with that email, check your inbox for password reset instructions.
-              </p>
+        {submitted ? (
+          <div className="text-center py-6 space-y-4">
+            <CheckCircle2 className="w-12 h-12 text-[#1b6b36] mx-auto" />
+            <p className="text-sm font-bold uppercase tracking-wider text-[#141414]">Reset Link Dispatched</p>
+            <p className="text-xs text-[#444343] leading-relaxed">
+              If an account exists with that email, check your inbox for password reset instructions.
+            </p>
+            <div className="pt-4">
               <Link to="/login">
-                <Button variant="primary" size="sm" className="w-full">Return to Sign In</Button>
+                <PosterButton variant="primary" size="md" className="w-full">RETURN TO SIGN IN</PosterButton>
               </Link>
             </div>
-          ) : (
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <Input
-                label="Email Address"
-                type="email"
-                icon={Mail}
-                placeholder="name@company.com"
-                error={errors.email?.message}
-                {...register('email', {
-                  required: 'Email is required',
-                  pattern: { value: emailPattern, message: 'Invalid email address' }
-                })}
-              />
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <Input
+              label="EMAIL ADDRESS"
+              type="email"
+              placeholder="name@company.com"
+              error={errors.email?.message}
+              {...register('email', {
+                required: 'Email is required',
+                pattern: { value: emailPattern, message: 'Invalid email address' }
+              })}
+            />
 
-              <Button type="submit" variant="primary" size="md" className="w-full" isLoading={isSubmitting}>
-                Send Instructions
-              </Button>
+            <div className="pt-2">
+              <PosterButton type="submit" variant="primary" size="lg" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? 'SENDING...' : 'SEND INSTRUCTIONS'}
+              </PosterButton>
+            </div>
 
-              <div className="text-center pt-2">
-                <Link to="/login" className="inline-flex items-center text-xs font-bold text-brand-charcoal hover:text-brand-navy">
-                  <ArrowLeft className="w-3.5 h-3.5 mr-1.5" /> Back to Sign In
-                </Link>
-              </div>
-            </form>
-          )}
-        </Card>
+            <div className="text-center pt-3">
+              <Link to="/login" className="inline-flex items-center text-xs font-mono font-bold uppercase text-[#1351AA] hover:underline">
+                <ArrowLeft className="w-3.5 h-3.5 mr-1.5" /> BACK TO SIGN IN
+              </Link>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
 }
+
+export default ForgotPasswordPage;

@@ -10,7 +10,7 @@ export const Select = forwardRef(function Select(
   return (
     <div className="w-full">
       {label && (
-        <label htmlFor={selectId} className="block text-xs font-bold uppercase tracking-wider text-brand-charcoal mb-1.5">
+        <label htmlFor={selectId} className="block text-xs font-bold uppercase tracking-[0.15em] text-[#7A7A7A] mb-2">
           {label}
         </label>
       )}
@@ -19,8 +19,8 @@ export const Select = forwardRef(function Select(
         ref={ref}
         className={twMerge(
           clsx(
-            'w-full bg-brand-white border border-brand-charcoal/20 px-4 py-2.5 text-sm text-brand-navy transition-colors duration-200 focus:outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy appearance-none cursor-pointer',
-            error && 'border-red-500',
+            'w-full bg-[#E3E2DE] sm:bg-white border border-[#C7C7C7] px-4 py-3 text-sm text-[#141414] transition-colors duration-300 ease-linear focus:outline-none focus:border-[#1351AA] focus:bg-white appearance-none cursor-pointer',
+            error && 'border-[#9e1c1c]',
             className
           )
         )}
@@ -32,7 +32,9 @@ export const Select = forwardRef(function Select(
           </option>
         ))}
       </select>
-      {error && <p className="mt-1 text-xs text-red-600 font-medium">{error}</p>}
+      {error && <p className="mt-1.5 text-xs text-[#9e1c1c] font-mono font-medium">{error}</p>}
     </div>
   );
 });
+
+export default Select;

@@ -1,7 +1,7 @@
 import React from 'react';
-import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { toggleRole, logout } from '../store/slices/authSlice.js';
+import { toggleRole } from '../store/slices/authSlice.js';
 import {
   Activity,
   Users,
@@ -9,9 +9,7 @@ import {
   Cpu,
   BarChart3,
   Terminal,
-  ArrowLeft,
-  ShieldAlert,
-  Radio
+  ArrowLeft
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { ToastContainer } from '../components/ui/Toast.jsx';
@@ -19,47 +17,46 @@ import { ToastContainer } from '../components/ui/Toast.jsx';
 export function AdminLayout() {
   const user = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
-  const navigate = useNavigate();
 
   const adminNav = [
-    { to: '/admin', label: 'Overview', icon: Activity, end: true },
-    { to: '/admin/users', label: 'Users', icon: Users },
-    { to: '/admin/content', label: 'Content', icon: Database },
-    { to: '/admin/processing', label: 'Processing', icon: Cpu },
-    { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
-    { to: '/admin/system', label: 'System', icon: Terminal }
+    { to: '/admin', label: 'OVERVIEW', icon: Activity, end: true },
+    { to: '/admin/users', label: 'USERS', icon: Users },
+    { to: '/admin/content', label: 'CONTENT', icon: Database },
+    { to: '/admin/processing', label: 'PROCESSING', icon: Cpu },
+    { to: '/admin/analytics', label: 'ANALYTICS', icon: BarChart3 },
+    { to: '/admin/system', label: 'SYSTEM', icon: Terminal }
   ];
 
   return (
-    <div className="min-h-screen flex bg-brand-charcoal text-brand-light font-sans">
-      {/* Dark/Brutalist Admin Sidebar */}
-      <aside className="w-64 bg-brand-navy border-r border-brand-charcoal flex flex-col justify-between flex-shrink-0 z-30">
+    <div className="min-h-screen flex flex-col md:flex-row bg-[#E3E2DE] text-[#141414]">
+      {/* Modernist Editorial Admin Sidebar */}
+      <aside className="w-full md:w-64 bg-[#141414] text-[#E3E2DE] border-b md:border-b-0 md:border-r border-[#141414] flex flex-col justify-between flex-shrink-0 z-30">
         <div>
           {/* Admin Header */}
-          <div className="h-20 px-6 flex items-center justify-between border-b border-brand-charcoal">
-            <div className="flex items-center space-x-2">
-              <span className="font-display text-2xl tracking-wider text-brand-white">WrapAI</span>
-              <span className="text-[9px] font-mono uppercase bg-red-600 text-white px-1.5 py-0.5 tracking-widest font-bold">
+          <div className="h-20 px-6 flex items-center justify-between border-b border-[#444343]">
+            <div className="flex items-center space-x-3">
+              <div className="w-3.5 h-3.5 bg-[#1351AA]" />
+              <span className="text-xl font-black tracking-tight text-[#E3E2DE] uppercase">
+                WRAPAI
+              </span>
+              <span className="text-[9px] font-mono uppercase bg-[#1351AA] text-[#E3E2DE] px-1.5 py-0.5 font-bold">
                 ADMIN
               </span>
             </div>
-            <div className="flex items-center text-emerald-400" title="System Operational">
-              <Radio className="w-4 h-4 animate-pulse" />
-            </div>
           </div>
 
-          <div className="p-4 border-b border-brand-charcoal">
+          <div className="p-4 border-b border-[#444343]">
             <Link
               to="/dashboard"
-              className="flex items-center text-xs font-bold text-brand-sage hover:text-brand-white transition-colors"
+              className="flex items-center text-xs font-bold uppercase tracking-wider text-[#E3E2DE]/70 hover:text-[#E3E2DE] transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5 mr-2" />
-              Return to User Dashboard
+              USER DASHBOARD
             </Link>
           </div>
 
           {/* Nav Items */}
-          <nav className="p-4 space-y-1.5">
+          <nav className="p-3 space-y-1">
             {adminNav.map((item) => {
               const Icon = item.icon;
               return (
@@ -69,15 +66,15 @@ export function AdminLayout() {
                   end={item.end}
                   className={({ isActive }) =>
                     clsx(
-                      'flex items-center px-4 py-3 text-xs font-bold uppercase tracking-wider transition-all duration-200 border',
+                      'flex items-center px-4 py-3 text-xs font-bold uppercase tracking-[0.15em] transition-colors duration-300 ease-linear border',
                       isActive
-                        ? 'bg-brand-white text-brand-navy border-brand-white font-extrabold shadow-sm'
-                        : 'bg-transparent text-brand-sage border-transparent hover:bg-brand-charcoal/80 hover:text-brand-white'
+                        ? 'bg-[#1351AA] text-[#E3E2DE] border-[#1351AA]'
+                        : 'bg-transparent text-[#E3E2DE]/70 border-transparent hover:bg-white/10 hover:text-[#E3E2DE]'
                     )
                   }
                 >
-                  <Icon className="w-4 h-4 mr-3" />
-                  {item.label}
+                  <Icon className="w-4 h-4 mr-3 flex-shrink-0" />
+                  <span>{item.label}</span>
                 </NavLink>
               );
             })}
@@ -85,39 +82,38 @@ export function AdminLayout() {
         </div>
 
         {/* Footer Admin info */}
-        <div className="p-4 border-t border-brand-charcoal bg-black/20">
-          <div className="flex items-center justify-between mb-2">
+        <div className="p-4 border-t border-[#444343] bg-black/30 space-y-2">
+          <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-brand-white">{user?.fullName || 'Admin User'}</p>
-              <p className="text-[10px] font-mono text-emerald-400">ROLE: ADMINISTRATOR</p>
+              <p className="text-xs font-bold uppercase text-[#E3E2DE]">{user?.fullName || 'ADMIN'}</p>
+              <p className="text-[10px] font-mono text-[#1351AA]">ROLE: ADMINISTRATOR</p>
             </div>
             <button
               onClick={() => dispatch(toggleRole())}
-              className="text-[10px] font-mono text-brand-sage hover:text-brand-white border border-brand-charcoal px-1.5 py-0.5"
+              className="text-[10px] font-mono text-[#E3E2DE]/70 hover:text-[#E3E2DE] border border-[#444343] px-2 py-1 cursor-pointer"
             >
-              Toggle Role
+              TOGGLE
             </button>
           </div>
         </div>
       </aside>
 
       {/* Main Admin Content Canvas */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto bg-brand-navy/95">
-        <header className="h-16 bg-brand-navy border-b border-brand-charcoal px-8 flex items-center justify-between sticky top-0 z-20">
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        <header className="h-20 bg-[#E3E2DE]/95 backdrop-blur-xs border-b border-[#C7C7C7] px-6 sm:px-8 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center space-x-3">
-            <ShieldAlert className="w-4 h-4 text-brand-cyan" />
-            <span className="text-xs font-mono font-bold uppercase tracking-widest text-brand-sage">
-              Platform Administration & Telemetry
+            <span className="text-xs font-mono font-bold uppercase tracking-[0.2em] text-[#7A7A7A]">
+              PLATFORM TELEMETRY & SYSTEM CONTROL
             </span>
           </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-xs font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800 px-2.5 py-1">
-              STATUS: HEALTHY
+          <div className="flex items-center space-x-3">
+            <span className="text-xs font-mono font-bold text-[#1b6b36] bg-[#1b6b36]/10 border border-[#1b6b36] px-2.5 py-1 uppercase">
+              STATUS: OPERATIONAL
             </span>
           </div>
         </header>
 
-        <main className="flex-1 p-6 sm:p-8">
+        <main className="flex-1 p-6 sm:p-8 lg:p-10 max-w-[1400px] w-full mx-auto">
           <Outlet />
         </main>
       </div>
@@ -126,3 +122,5 @@ export function AdminLayout() {
     </div>
   );
 }
+
+export default AdminLayout;

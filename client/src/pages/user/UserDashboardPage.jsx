@@ -2,24 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { contentService } from '../../services/contentService.js';
-import { Button } from '../../components/ui/Button.jsx';
-import { Card } from '../../components/ui/Card.jsx';
-import { Badge } from '../../components/ui/Badge.jsx';
+import { PosterButton } from '../../components/ui/PosterButton.jsx';
 import { StatCard } from '../../components/common/StatCard.jsx';
+import { StatusLabel } from '../../components/ui/StatusLabel.jsx';
 import { LoadingState } from '../../components/common/LoadingState.jsx';
-import {
-  UploadCloud,
-  FileText,
-  Clock,
-  CheckCircle2,
-  FolderOpen,
-  ArrowRight,
-  Mic,
-  Video,
-  Link2,
-  Sparkles
-} from 'lucide-react';
+import { EmptyState } from '../../components/common/EmptyState.jsx';
+import { GridSidebarLabel } from '../../components/ui/GridSidebarLabel.jsx';
 import { formatTimecode, formatDate } from '../../utils/formatters.js';
+import { ArrowRight, UploadCloud, Mic, Video, Link2, FileText } from 'lucide-react';
 
 export function UserDashboardPage() {
   const user = useSelector((state) => state.auth.user);
@@ -30,7 +20,7 @@ export function UserDashboardPage() {
     async function loadData() {
       try {
         const res = await contentService.getContentList();
-        setContentList(res.data);
+        setContentList(res.data || []);
       } finally {
         setIsLoading(false);
       }
@@ -46,135 +36,139 @@ export function UserDashboardPage() {
   const reportsGenerated = contentList.filter((c) => c.hasReport).length;
 
   return (
-    <div className="space-y-10">
-      {/* Top Welcome Banner */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-6 border-b border-brand-charcoal/15">
-        <div>
-          <span className="text-xs font-mono font-bold uppercase tracking-widest text-brand-taupe">
-            INTELLIGENCE OVERVIEW
-          </span>
-          <h1 className="font-display text-4xl sm:text-5xl uppercase tracking-tight text-brand-navy mt-1">
-            Good Morning, {user?.fullName?.split(' ')[0] || 'User'}
-          </h1>
-        </div>
-        <div className="flex items-center space-x-3">
-          <Link to="/upload">
-            <Button variant="primary" size="md" icon={UploadCloud}>
-              Upload Content
-            </Button>
-          </Link>
-        </div>
-      </div>
-
-      {/* 4 Compact Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <StatCard
-          label="Total Content"
-          value={totalItems}
-          subtext="Ingested assets"
-          icon={FolderOpen}
-          trend="+3 this week"
-        />
-        <StatCard
-          label="Processed"
-          value={processedItems}
-          subtext="Ready for analysis"
-          icon={CheckCircle2}
-        />
-        <StatCard
-          label="Hours Analyzed"
-          value={`${totalHours}h`}
-          subtext="Audio & video media"
-          icon={Clock}
-        />
-        <StatCard
-          label="Reports Generated"
-          value={reportsGenerated}
-          subtext="Minutes & summaries"
-          icon={FileText}
-        />
-      </div>
-
-      {/* Quick Ingestion Action Banner */}
-      <Card className="bg-gradient-to-r from-brand-navy to-brand-charcoal text-brand-white p-6 sm:p-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="max-w-xl">
-            <span className="text-[10px] font-mono uppercase bg-brand-cyan text-brand-navy px-2 py-0.5 font-bold tracking-widest">
-              QUICK WRAP
+    <div className="space-y-16">
+      {/* 1. Header & Context */}
+      <div className="border-b border-[#C7C7C7] pb-8">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+          <div className="space-y-2">
+            <span className="font-mono text-xs font-bold text-[#1351AA] uppercase tracking-[0.2em] block">
+              WORKSPACE OVERVIEW • {user?.fullName || 'USER'}
             </span>
-            <h3 className="font-display text-3xl uppercase tracking-wide mt-2">
-              Transform Your Next Meeting or Recording
-            </h3>
-            <p className="text-xs text-brand-sage mt-1">
-              Provide an audio/video recording, document text, or supported URL to instantly generate transcripts, speakers, decisions, and action items.
-            </p>
+            <h1 className="text-poster-section text-[#141414]">
+              YOUR <br />
+              <span className="text-[#1351AA]">CONTENT.</span>
+            </h1>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Link to="/upload?type=AUDIO">
-              <Button variant="secondary" size="sm" icon={Mic}>Audio</Button>
-            </Link>
-            <Link to="/upload?type=VIDEO">
-              <Button variant="secondary" size="sm" icon={Video}>Video</Button>
-            </Link>
-            <Link to="/upload?type=URL">
-              <Button variant="secondary" size="sm" icon={Link2}>URL</Button>
+          <div>
+            <Link to="/upload">
+              <PosterButton variant="primary" size="lg" icon={UploadCloud}>
+                UPLOAD NEW CONTENT
+              </PosterButton>
             </Link>
           </div>
         </div>
-      </Card>
+      </div>
 
-      {/* Recent Content Library Grid */}
-      <div>
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="font-display text-2xl uppercase tracking-wide text-brand-navy">
-            Recent Content
-          </h2>
-          <Link to="/content" className="text-xs font-bold uppercase tracking-wider text-brand-navy hover:underline flex items-center">
-            View All Content <ArrowRight className="w-3.5 h-3.5 ml-1" />
-          </Link>
+      {/* 2. Typographic Metrics Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard index="01" label="TOTAL INGESTED" value={totalItems} subtext="STORED MULTI-MODAL ASSETS" />
+        <StatCard index="02" label="PROCESSED" value={processedItems} subtext="TRANSCRIBED & ANALYZED" />
+        <StatCard index="03" label="HOURS ANALYZED" value={`${totalHours}H`} subtext="AUDIO & VIDEO RUNTIME" />
+        <StatCard index="04" label="REPORTS READY" value={reportsGenerated} subtext="PDF/DOCX COMPILED" />
+      </div>
+
+      {/* 3. Ingestion Matrix */}
+      <div className="grid grid-cols-12 gap-8 pt-4">
+        <GridSidebarLabel label="QUICK INGEST" index="01">
+          <p className="text-xs font-mono text-[#7A7A7A] uppercase leading-relaxed">
+            INSTANT MULTI-MODAL PIPELINE
+          </p>
+        </GridSidebarLabel>
+
+        <div className="col-span-12 lg:col-span-9">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Link to="/upload?type=AUDIO" className="border border-[#C7C7C7] p-6 bg-white/50 hover:bg-white hover:border-[#1351AA] transition-colors block space-y-3">
+              <Mic className="w-5 h-5 text-[#1351AA]" />
+              <h4 className="font-bold text-base uppercase text-[#141414]">AUDIO STREAM</h4>
+              <p className="text-xs text-[#444343]">MP3, WAV, M4A 16kHz speech recognition.</p>
+            </Link>
+            <Link to="/upload?type=VIDEO" className="border border-[#C7C7C7] p-6 bg-white/50 hover:bg-white hover:border-[#1351AA] transition-colors block space-y-3">
+              <Video className="w-5 h-5 text-[#1351AA]" />
+              <h4 className="font-bold text-base uppercase text-[#141414]">VIDEO RECORDING</h4>
+              <p className="text-xs text-[#444343]">MP4, MOV, MKV multi-speaker processing.</p>
+            </Link>
+            <Link to="/upload?type=TEXT" className="border border-[#C7C7C7] p-6 bg-white/50 hover:bg-white hover:border-[#1351AA] transition-colors block space-y-3">
+              <FileText className="w-5 h-5 text-[#1351AA]" />
+              <h4 className="font-bold text-base uppercase text-[#141414]">DOCUMENTS</h4>
+              <p className="text-xs text-[#444343]">PDF, DOCX, TXT document intelligence.</p>
+            </Link>
+            <Link to="/upload?type=URL" className="border border-[#C7C7C7] p-6 bg-white/50 hover:bg-white hover:border-[#1351AA] transition-colors block space-y-3">
+              <Link2 className="w-5 h-5 text-[#1351AA]" />
+              <h4 className="font-bold text-base uppercase text-[#141414]">REMOTE URL</h4>
+              <p className="text-xs text-[#444343]">Direct streaming ingest from external links.</p>
+            </Link>
+          </div>
         </div>
+      </div>
 
-        {isLoading ? (
-          <LoadingState message="Loading your content items..." />
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {contentList.slice(0, 3).map((item) => (
-              <Card key={item.id} hover className="flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <Badge variant={item.contentType === 'VIDEO' ? 'blue' : item.contentType === 'AUDIO' ? 'sage' : 'beige'}>
-                      {item.contentType}
-                    </Badge>
-                    <span className="text-[11px] font-mono text-brand-taupe">
-                      {formatDate(item.createdAt)}
+      {/* 4. Recent Content Editorial List */}
+      <div className="grid grid-cols-12 gap-8 pt-6">
+        <GridSidebarLabel label="RECENT CONTENT" index="02">
+          <p className="text-xs font-mono text-[#7A7A7A] uppercase leading-relaxed">
+            LATEST PROCESSED RECORDINGS
+          </p>
+        </GridSidebarLabel>
+
+        <div className="col-span-12 lg:col-span-9 space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-[#C7C7C7]">
+            <span className="font-mono text-xs font-bold text-[#7A7A7A] uppercase">RECORDINGS & DOCUMENTS</span>
+            <Link to="/content" className="text-xs font-bold font-mono text-[#1351AA] hover:underline uppercase flex items-center">
+              VIEW ALL CONTENT <ArrowRight className="w-3.5 h-3.5 ml-1" />
+            </Link>
+          </div>
+
+          {isLoading ? (
+            <LoadingState message="LOADING WORKSPACE ASSETS..." />
+          ) : contentList.length === 0 ? (
+            <EmptyState
+              title="NO CONTENT INGESTED"
+              description="Upload an audio, video, or text file to begin generating structured intelligence."
+              actionLabel="UPLOAD CONTENT"
+              onAction={() => window.location.assign('/upload')}
+            />
+          ) : (
+            <div className="divide-y divide-[#C7C7C7] border-b border-[#C7C7C7]">
+              {contentList.slice(0, 5).map((item, idx) => (
+                <div
+                  key={item.id}
+                  className="py-5 sm:py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group hover:bg-white/50 px-3 transition-colors duration-300"
+                >
+                  <div className="flex items-start sm:items-center space-x-4">
+                    <span className="font-mono text-sm font-bold text-[#7A7A7A] group-hover:text-[#1351AA]">
+                      0{idx + 1}
                     </span>
+                    <div className="space-y-1">
+                      <Link to={`/content/${item.id}`}>
+                        <h3 className="text-lg sm:text-xl font-bold uppercase tracking-tight text-[#141414] group-hover:text-[#1351AA] transition-colors">
+                          {item.title}
+                        </h3>
+                      </Link>
+                      <div className="flex items-center space-x-3 text-xs font-mono text-[#7A7A7A]">
+                        <span>{item.contentType}</span>
+                        <span>•</span>
+                        <span>{item.mediaDurationSeconds ? formatTimecode(item.mediaDurationSeconds) : 'DOCUMENT'}</span>
+                        <span>•</span>
+                        <span>{formatDate(item.createdAt)}</span>
+                      </div>
+                    </div>
                   </div>
 
-                  <Link to={`/content/${item.id}`}>
-                    <h3 className="font-display text-xl uppercase tracking-wide text-brand-navy hover:text-brand-charcoal line-clamp-2 mb-2">
-                      {item.title}
-                    </h3>
-                  </Link>
-
-                  <p className="text-xs text-brand-taupe line-clamp-2 mb-4">{item.description}</p>
+                  <div className="flex items-center space-x-4 self-end sm:self-center">
+                    <StatusLabel status={item.processingStatus} />
+                    <Link to={`/content/${item.id}`}>
+                      <PosterButton variant="outline" size="sm">
+                        OPEN
+                      </PosterButton>
+                    </Link>
+                  </div>
                 </div>
-
-                <div className="pt-4 border-t border-brand-charcoal/10 flex items-center justify-between">
-                  <span className="text-xs font-mono text-brand-charcoal">
-                    {item.mediaDurationSeconds ? formatTimecode(item.mediaDurationSeconds) : 'Document'}
-                  </span>
-
-                  <Link to={`/content/${item.id}`}>
-                    <Button variant="outline" size="sm">
-                      Open Workspace
-                    </Button>
-                  </Link>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
+
+export default UserDashboardPage;

@@ -1,24 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { contentService } from '../../services/contentService.js';
-import { Button } from '../../components/ui/Button.jsx';
-import { Card } from '../../components/ui/Card.jsx';
+import { PosterButton } from '../../components/ui/PosterButton.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import { Select } from '../../components/ui/Select.jsx';
-import { Badge } from '../../components/ui/Badge.jsx';
+import { StatusLabel } from '../../components/ui/StatusLabel.jsx';
 import { Modal } from '../../components/ui/Modal.jsx';
 import { EmptyState } from '../../components/common/EmptyState.jsx';
 import { LoadingState } from '../../components/common/LoadingState.jsx';
+import { GridSidebarLabel } from '../../components/ui/GridSidebarLabel.jsx';
 import {
   Search,
-  Grid,
-  List,
   UploadCloud,
   Trash2,
   Edit2,
-  FileText,
-  Clock,
-  ArrowRight,
   ChevronLeft,
   ChevronRight,
   AlertCircle
@@ -33,7 +28,6 @@ export function MyContentPage() {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
-  const [viewMode, setViewMode] = useState('grid');
 
   // Rename modal state
   const [renameModalItem, setRenameModalItem] = useState(null);
@@ -93,252 +87,214 @@ export function MyContentPage() {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-brand-charcoal/15">
-        <div>
-          <span className="text-xs font-mono font-bold uppercase tracking-widest text-brand-taupe">LIBRARY REPOSITORY</span>
-          <h1 className="font-display text-4xl uppercase tracking-tight text-brand-navy mt-1">
-            My Content
-          </h1>
+    <div className="space-y-12">
+      {/* 1. Header */}
+      <div className="border-b border-[#C7C7C7] pb-8">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+          <div className="space-y-2">
+            <span className="font-mono text-xs font-bold text-[#1351AA] uppercase tracking-[0.2em] block">
+              LIBRARY REPOSITORY
+            </span>
+            <h1 className="text-poster-section text-[#141414]">
+              CONTENT <br />
+              <span className="text-[#1351AA]">LIBRARY.</span>
+            </h1>
+          </div>
+          <div>
+            <Link to="/upload">
+              <PosterButton variant="primary" size="lg" icon={UploadCloud}>
+                UPLOAD CONTENT
+              </PosterButton>
+            </Link>
+          </div>
         </div>
-        <Link to="/upload">
-          <Button variant="primary" size="md" icon={UploadCloud}>
-            Upload Content
-          </Button>
-        </Link>
       </div>
 
-      {/* Filter & Search Bar */}
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-brand-white p-4 border border-brand-charcoal/15">
-        <div className="w-full md:w-96">
+      {/* 2. Technical Filters & Search Bar */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center bg-white/70 p-4 sm:p-6 border border-[#C7C7C7]">
+        <div className="md:col-span-6">
           <Input
             icon={Search}
-            placeholder="Search by title or filename..."
+            placeholder="SEARCH BY TITLE OR FILENAME..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
-        <div className="flex items-center space-x-3 w-full md:w-auto">
+        <div className="md:col-span-3">
           <Select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
             options={[
-              { value: 'ALL', label: 'All Media Types' },
-              { value: 'AUDIO', label: 'Audio Files' },
-              { value: 'VIDEO', label: 'Video Files' },
-              { value: 'DOCUMENT', label: 'Documents' },
-              { value: 'TEXT', label: 'Raw Text' },
-              { value: 'URL', label: 'Remote URLs' }
+              { value: 'ALL', label: 'ALL MEDIA TYPES' },
+              { value: 'AUDIO', label: 'AUDIO FILES' },
+              { value: 'VIDEO', label: 'VIDEO FILES' },
+              { value: 'DOCUMENT', label: 'DOCUMENTS' },
+              { value: 'TEXT', label: 'RAW TEXT' },
+              { value: 'URL', label: 'REMOTE URLS' }
             ]}
           />
+        </div>
 
+        <div className="md:col-span-3">
           <Select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             options={[
-              { value: 'ALL', label: 'All Statuses' },
-              { value: 'UPLOADED', label: 'Uploaded (Ready)' },
-              { value: 'QUEUED', label: 'Queued' },
-              { value: 'PROCESSING', label: 'Processing' },
-              { value: 'COMPLETED', label: 'Completed' }
+              { value: 'ALL', label: 'ALL STATUSES' },
+              { value: 'UPLOADED', label: 'UPLOADED (READY)' },
+              { value: 'QUEUED', label: 'QUEUED' },
+              { value: 'PROCESSING', label: 'PROCESSING' },
+              { value: 'COMPLETED', label: 'COMPLETED' }
             ]}
           />
-
-          <div className="flex border border-brand-charcoal/20">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`p-2 ${viewMode === 'grid' ? 'bg-brand-navy text-white' : 'text-brand-taupe hover:text-brand-navy'}`}
-              title="Grid View"
-            >
-              <Grid className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`p-2 ${viewMode === 'list' ? 'bg-brand-navy text-white' : 'text-brand-taupe hover:text-brand-navy'}`}
-              title="List View"
-            >
-              <List className="w-4 h-4" />
-            </button>
-          </div>
         </div>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-xs flex items-center space-x-2">
+        <div className="p-4 bg-[#9e1c1c]/10 border border-[#9e1c1c] text-[#9e1c1c] text-xs font-mono flex items-center space-x-3">
           <AlertCircle className="w-4 h-4" />
           <span>{error}</span>
         </div>
       )}
 
-      {/* Content Rendering */}
-      {isLoading ? (
-        <LoadingState message="Loading content repository..." />
-      ) : contentList.length === 0 ? (
-        <EmptyState
-          title="No content found"
-          description="Try adjusting your filters or upload new audio/video content."
-          actionLabel="Upload Content"
-          onAction={() => window.location.assign('/upload')}
-        />
-      ) : viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {contentList.map((item) => (
-            <Card key={item.id} hover className="flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <Badge variant={item.contentType === 'VIDEO' ? 'blue' : item.contentType === 'AUDIO' ? 'sage' : 'beige'}>
-                    {item.contentType}
-                  </Badge>
-                  <span className="text-[11px] font-mono text-brand-taupe">
-                    {formatDate(item.createdAt)}
-                  </span>
-                </div>
+      {/* 3. Numbered Content List */}
+      <div className="grid grid-cols-12 gap-8">
+        <GridSidebarLabel label="ASSET LIST" index="01">
+          <p className="text-xs font-mono text-[#7A7A7A] uppercase leading-relaxed">
+            PAGINATED REGISTRY ({pagination.total} TOTAL)
+          </p>
+        </GridSidebarLabel>
 
-                <Link to={`/content/${item.id}`}>
-                  <h3 className="font-display text-xl uppercase tracking-wide text-brand-navy hover:text-brand-charcoal line-clamp-2 mb-2">
-                    {item.title}
-                  </h3>
-                </Link>
-
-                <p className="text-xs text-brand-taupe line-clamp-2 mb-4">
-                  {item.description || (item.originalFileName ? `File: ${item.originalFileName}` : 'Ingested content asset.')}
-                </p>
-              </div>
-
-              <div className="pt-4 border-t border-brand-charcoal/10">
-                <div className="flex items-center justify-between mb-3 text-xs font-mono text-brand-charcoal">
-                  <span>
-                    {item.fileSizeBytes ? formatBytes(item.fileSizeBytes) : (item.mediaDurationSeconds ? formatTimecode(item.mediaDurationSeconds) : 'Direct Text')}
-                  </span>
-                  <span className="text-emerald-700 font-bold uppercase">{item.processingStatus}</span>
-                </div>
-
-                <div className="flex items-center justify-between gap-2">
-                  <Link to={`/content/${item.id}`} className="flex-1">
-                    <Button variant="primary" size="sm" className="w-full">
-                      Open Workspace
-                    </Button>
-                  </Link>
-
-                  <button
-                    onClick={() => {
-                      setRenameModalItem(item);
-                      setNewTitle(item.title);
-                    }}
-                    className="p-2 border border-brand-charcoal/20 hover:bg-brand-sage/20 text-brand-charcoal"
-                    title="Rename"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
-
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    className="p-2 border border-brand-charcoal/20 hover:bg-red-50 text-red-600"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        /* List View */
-        <div className="bg-brand-white border border-brand-charcoal/15 divide-y divide-brand-charcoal/10">
-          {contentList.map((item) => (
-            <div key={item.id} className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-brand-light/60 transition-colors">
-              <div className="flex items-start space-x-4">
-                <Badge variant={item.contentType === 'VIDEO' ? 'blue' : item.contentType === 'AUDIO' ? 'sage' : 'beige'}>
-                  {item.contentType}
-                </Badge>
-                <div>
-                  <Link to={`/content/${item.id}`} className="font-display text-lg uppercase text-brand-navy hover:underline">
-                    {item.title}
-                  </Link>
-                  <p className="text-xs text-brand-taupe mt-0.5 line-clamp-1">
-                    {item.originalFileName ? `${item.originalFileName} • ` : ''}{formatBytes(item.fileSizeBytes || 0)}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-4">
-                <span className="text-xs font-mono text-brand-charcoal uppercase font-bold text-emerald-700">
-                  {item.processingStatus}
-                </span>
-                <span className="text-xs font-mono text-brand-taupe">{formatDate(item.createdAt)}</span>
-                <Link to={`/content/${item.id}`}>
-                  <Button variant="outline" size="sm">Open</Button>
-                </Link>
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  className="p-1.5 text-brand-taupe hover:text-red-600"
-                  title="Delete"
+        <div className="col-span-12 lg:col-span-9 space-y-6">
+          {isLoading ? (
+            <LoadingState message="LOADING CONTENT REPOSITORY..." />
+          ) : contentList.length === 0 ? (
+            <EmptyState
+              title="NO CONTENT MATCHES CRITERIA"
+              description="Try adjusting your filter terms or upload new recordings."
+              actionLabel="UPLOAD NEW ASSET"
+              onAction={() => window.location.assign('/upload')}
+            />
+          ) : (
+            <div className="divide-y divide-[#C7C7C7] border-y border-[#C7C7C7]">
+              {contentList.map((item, idx) => (
+                <div
+                  key={item.id}
+                  className="py-6 flex flex-col md:flex-row md:items-center justify-between gap-6 group hover:bg-white/60 px-4 transition-colors duration-300"
                 >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                  <div className="flex items-start space-x-4">
+                    <span className="font-mono text-sm font-bold text-[#7A7A7A] group-hover:text-[#1351AA]">
+                      {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}
+                    </span>
+                    <div className="space-y-1.5">
+                      <Link to={`/content/${item.id}`}>
+                        <h3 className="text-xl sm:text-2xl font-bold uppercase tracking-tight text-[#141414] group-hover:text-[#1351AA] transition-colors">
+                          {item.title}
+                        </h3>
+                      </Link>
+                      <div className="flex flex-wrap items-center gap-3 text-xs font-mono text-[#7A7A7A]">
+                        <span className="font-bold text-[#141414]">{item.contentType}</span>
+                        <span>•</span>
+                        <span>
+                          {item.fileSizeBytes
+                            ? formatBytes(item.fileSizeBytes)
+                            : item.mediaDurationSeconds
+                            ? formatTimecode(item.mediaDurationSeconds)
+                            : 'TEXT'}
+                        </span>
+                        <span>•</span>
+                        <span>{formatDate(item.createdAt)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3 self-end md:self-center">
+                    <StatusLabel status={item.processingStatus} />
+                    <Link to={`/content/${item.id}`}>
+                      <PosterButton variant="primary" size="sm">
+                        OPEN
+                      </PosterButton>
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setRenameModalItem(item);
+                        setNewTitle(item.title);
+                      }}
+                      className="p-2 border border-[#C7C7C7] hover:border-[#141414] text-[#141414] transition-colors cursor-pointer"
+                      title="Rename"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      className="p-2 border border-[#C7C7C7] hover:border-[#9e1c1c] hover:text-[#9e1c1c] text-[#7A7A7A] transition-colors cursor-pointer"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between pt-6 border-t border-[#C7C7C7]">
+              <span className="text-xs font-mono text-[#7A7A7A] uppercase">
+                PAGE {pagination.page} OF {pagination.totalPages} ({pagination.total} TOTAL)
+              </span>
+              <div className="flex items-center space-x-2">
+                <PosterButton
+                  variant="outline"
+                  size="sm"
+                  icon={ChevronLeft}
+                  disabled={pagination.page <= 1}
+                  onClick={() => loadData(pagination.page - 1)}
+                >
+                  PREV
+                </PosterButton>
+                <PosterButton
+                  variant="outline"
+                  size="sm"
+                  disabled={pagination.page >= pagination.totalPages}
+                  onClick={() => loadData(pagination.page + 1)}
+                >
+                  NEXT
+                </PosterButton>
               </div>
             </div>
-          ))}
+          )}
         </div>
-      )}
-
-      {/* Pagination Controls */}
-      {pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-brand-charcoal/15 pt-4">
-          <span className="text-xs font-mono text-brand-taupe">
-            Showing Page {pagination.page} of {pagination.totalPages} ({pagination.total} total items)
-          </span>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              icon={ChevronLeft}
-              disabled={pagination.page <= 1}
-              onClick={() => loadData(pagination.page - 1)}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              icon={ChevronRight}
-              iconPosition="right"
-              disabled={pagination.page >= pagination.totalPages}
-              onClick={() => loadData(pagination.page + 1)}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
+      </div>
 
       {/* Rename Content Modal */}
       <Modal
         isOpen={Boolean(renameModalItem)}
         onClose={() => setRenameModalItem(null)}
-        title="Rename Content"
+        title="RENAME CONTENT"
       >
-        <form onSubmit={handleRenameSubmit} className="space-y-4">
+        <form onSubmit={handleRenameSubmit} className="space-y-6">
           <Input
-            label="Content Title"
+            label="CONTENT TITLE"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             required
             autoFocus
           />
-          <div className="flex justify-end space-x-3 pt-4 border-t border-brand-charcoal/10">
-            <Button type="button" variant="ghost" onClick={() => setRenameModalItem(null)}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="primary" isLoading={isRenaming}>
-              Save Title
-            </Button>
+          <div className="flex justify-end space-x-3 pt-4 border-t border-[#C7C7C7]">
+            <PosterButton type="button" variant="outline" size="sm" onClick={() => setRenameModalItem(null)}>
+              CANCEL
+            </PosterButton>
+            <PosterButton type="submit" variant="primary" size="sm" disabled={isRenaming}>
+              {isRenaming ? 'SAVING...' : 'SAVE TITLE'}
+            </PosterButton>
           </div>
         </form>
       </Modal>
     </div>
   );
 }
+
+export default MyContentPage;

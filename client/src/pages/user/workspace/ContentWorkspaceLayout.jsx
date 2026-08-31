@@ -4,8 +4,8 @@ import { useSelector } from 'react-redux';
 import { contentService } from '../../../services/contentService.js';
 import { MediaPlayer } from '../../../components/media/MediaPlayer.jsx';
 import { Tabs } from '../../../components/ui/Tabs.jsx';
-import { Badge } from '../../../components/ui/Badge.jsx';
-import { Button } from '../../../components/ui/Button.jsx';
+import { PosterButton } from '../../../components/ui/PosterButton.jsx';
+import { StatusLabel } from '../../../components/ui/StatusLabel.jsx';
 import { LoadingState } from '../../../components/common/LoadingState.jsx';
 import { CommentsPanel } from '../../../components/collaboration/CommentsPanel.jsx';
 import {
@@ -45,18 +45,17 @@ export function ContentWorkspaceLayout() {
   }, [id]);
 
   const tabs = [
-    { id: 'transcript', label: 'Transcript', icon: AlignLeft },
-    { id: 'summary', label: 'Summary', icon: FileText },
-    { id: 'topics', label: 'Topics', icon: Hash },
-    { id: 'key-points', label: 'Key Points', icon: ListOrdered },
-    { id: 'highlights', label: 'Highlights', icon: Sparkles },
-    { id: 'decisions', label: 'Decisions', icon: CheckCircle2 },
-    { id: 'actions', label: 'Action Items', icon: CheckSquare },
-    { id: 'report', label: 'Report', icon: FileCheck },
-    { id: 'chat', label: 'Ask AI', icon: MessageSquare }
+    { id: 'transcript', label: 'TRANSCRIPT', icon: AlignLeft },
+    { id: 'summary', label: 'SUMMARY', icon: FileText },
+    { id: 'topics', label: 'TOPICS', icon: Hash },
+    { id: 'key-points', label: 'KEY POINTS', icon: ListOrdered },
+    { id: 'highlights', label: 'HIGHLIGHTS', icon: Sparkles },
+    { id: 'decisions', label: 'DECISIONS', icon: CheckCircle2 },
+    { id: 'actions', label: 'ACTION ITEMS', icon: CheckSquare },
+    { id: 'report', label: 'REPORT', icon: FileCheck },
+    { id: 'chat', label: 'ASK AI', icon: MessageSquare }
   ];
 
-  // Extract active tab from pathname
   const currentPath = location.pathname.split('/').pop() || 'transcript';
   const activeTab = tabs.some((t) => t.id === currentPath) ? currentPath : 'transcript';
 
@@ -65,76 +64,71 @@ export function ContentWorkspaceLayout() {
   };
 
   if (isLoading) {
-    return <LoadingState message="Loading intelligence workspace..." />;
+    return <LoadingState message="LOADING INTELLIGENCE WORKSPACE..." />;
   }
 
   if (!content) {
     return (
-      <div className="bg-brand-white border border-brand-charcoal/15 p-8 text-center space-y-4">
-        <h2 className="font-display text-2xl uppercase text-brand-navy">Content Not Found</h2>
-        <p className="text-xs text-brand-taupe">The requested content item could not be retrieved.</p>
-        <button
-          onClick={() => navigate('/content')}
-          className="px-4 py-2 bg-brand-navy text-white text-xs uppercase font-bold tracking-wider"
-        >
-          Back to My Content
-        </button>
+      <div className="bg-white/70 border border-[#C7C7C7] p-12 text-center space-y-4">
+        <h2 className="text-2xl font-black uppercase text-[#141414]">CONTENT NOT FOUND</h2>
+        <p className="text-xs font-mono text-[#7A7A7A]">The requested content item could not be retrieved.</p>
+        <PosterButton variant="primary" size="sm" onClick={() => navigate('/content')}>
+          BACK TO CONTENT LIBRARY
+        </PosterButton>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Workspace Header Info */}
-      <div className="bg-brand-white border border-brand-charcoal/15 p-6 shadow-sm">
+    <div className="space-y-8">
+      {/* 1. Workspace Header Info */}
+      <div className="bg-white/70 border border-[#C7C7C7] p-6 sm:p-8 space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center space-x-2.5 mb-2">
-              <Badge variant={content.contentType === 'VIDEO' ? 'blue' : 'sage'}>
+          <div className="space-y-2">
+            <div className="flex items-center space-x-3 text-xs font-mono">
+              <span className="px-2.5 py-1 bg-[#141414] text-[#E3E2DE] font-bold uppercase">
                 {content.contentType}
-              </Badge>
-              <span className="text-xs font-mono text-brand-taupe">{formatDate(content.createdAt)}</span>
-              <span className="text-brand-taupe">|</span>
-              <span className="text-xs font-mono text-brand-charcoal font-bold">
-                {content.mediaDurationSeconds ? formatTimecode(content.mediaDurationSeconds) : 'Document'}
+              </span>
+              <span className="text-[#7A7A7A]">{formatDate(content.createdAt)}</span>
+              <span className="text-[#C7C7C7]">|</span>
+              <span className="text-[#141414] font-bold">
+                {content.mediaDurationSeconds ? formatTimecode(content.mediaDurationSeconds) : 'DOCUMENT'}
               </span>
             </div>
-            <h1 className="font-display text-3xl sm:text-4xl uppercase tracking-tight text-brand-navy">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black uppercase tracking-tight text-[#141414]">
               {content.title}
             </h1>
           </div>
 
           <div className="flex items-center space-x-3">
-            <Button
+            <PosterButton
               variant={showNotesDrawer ? 'primary' : 'outline'}
               size="sm"
               icon={MessageCircle}
               onClick={() => setShowNotesDrawer(!showNotesDrawer)}
             >
-              {showNotesDrawer ? 'Hide Team Notes' : 'Team Notes & Comments'}
-            </Button>
+              {showNotesDrawer ? 'HIDE NOTES' : 'COLLABORATION NOTES'}
+            </PosterButton>
 
-            <span className="text-xs font-mono text-emerald-800 bg-emerald-50 border border-emerald-300 px-3 py-1 font-bold">
-              {content.processingStatus}
-            </span>
+            <StatusLabel status={content.processingStatus} />
           </div>
         </div>
 
         {/* Media Player Component */}
         {content.mediaDurationSeconds && (
-          <div className="mt-6">
+          <div>
             <MediaPlayer duration={content.mediaDurationSeconds} title={content.title} />
           </div>
         )}
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="bg-brand-white border border-brand-charcoal/15 px-4 shadow-sm">
+      {/* 2. Navigation Tabs */}
+      <div className="bg-white/70 border border-[#C7C7C7] px-4">
         <Tabs tabs={tabs} activeTab={activeTab} onChange={handleTabChange} />
       </div>
 
-      {/* Tab Specific Content Pane + Optional Collaboration Drawer */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[400px]">
+      {/* 3. Tab Specific Content Pane + Optional Collaboration Drawer */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-[400px]">
         <div className={showNotesDrawer ? 'lg:col-span-8' : 'lg:col-span-12'}>
           <Outlet context={{ content }} />
         </div>
@@ -151,3 +145,5 @@ export function ContentWorkspaceLayout() {
     </div>
   );
 }
+
+export default ContentWorkspaceLayout;

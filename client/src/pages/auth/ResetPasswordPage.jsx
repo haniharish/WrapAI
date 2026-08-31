@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { Button } from '../../components/ui/Button.jsx';
+import { PosterButton } from '../../components/ui/PosterButton.jsx';
 import { Input } from '../../components/ui/Input.jsx';
-import { Card } from '../../components/ui/Card.jsx';
-import { AmbientBackground } from '../../components/common/AmbientBackground.jsx';
-import { Lock } from 'lucide-react';
 
 export function ResetPasswordPage() {
   const navigate = useNavigate();
@@ -20,54 +17,60 @@ export function ResetPasswordPage() {
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-80px)] flex items-center justify-center p-6 bg-brand-light">
-      <AmbientBackground />
-      <div className="relative z-10 w-full max-w-md">
-        <Card className="border border-brand-navy shadow-2xl p-8">
-          <div className="text-center mb-6">
-            <span className="font-display text-3xl uppercase tracking-wide text-brand-navy">Set New Password</span>
-            <p className="text-xs text-brand-taupe mt-1">Choose a secure password for your account</p>
+    <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-6 sm:p-12 bg-[#E3E2DE]">
+      <div className="w-full max-w-lg border border-[#C7C7C7] bg-white/70 p-8 sm:p-12 space-y-8">
+        <div className="space-y-2 border-b border-[#C7C7C7] pb-6">
+          <span className="font-mono text-xs font-bold text-[#1351AA] uppercase tracking-[0.2em] block">
+            CREDENTIALS
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-[#141414]">
+            SET NEW PASSWORD.
+          </h1>
+          <p className="text-xs font-mono text-[#7A7A7A] uppercase">
+            CHOOSE A SECURE ACCESS KEY FOR YOUR ACCOUNT
+          </p>
+        </div>
+
+        {done ? (
+          <div className="text-center py-4 space-y-4">
+            <p className="text-sm font-bold uppercase tracking-wider text-[#141414]">Password Updated Successfully</p>
+            <PosterButton variant="primary" size="lg" className="w-full" onClick={() => navigate('/login')}>
+              PROCEED TO SIGN IN
+            </PosterButton>
           </div>
+        ) : (
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <Input
+              label="NEW PASSWORD"
+              type="password"
+              placeholder="••••••••"
+              error={errors.password?.message}
+              {...register('password', {
+                required: 'Password is required',
+                minLength: { value: 6, message: 'Minimum 6 characters' }
+              })}
+            />
 
-          {done ? (
-            <div className="text-center py-4">
-              <p className="text-sm font-bold text-brand-navy mb-4">Password Updated Successfully</p>
-              <Button variant="primary" size="md" className="w-full" onClick={() => navigate('/login')}>
-                Proceed to Sign In
-              </Button>
+            <Input
+              label="CONFIRM NEW PASSWORD"
+              type="password"
+              placeholder="••••••••"
+              error={errors.confirmPassword?.message}
+              {...register('confirmPassword', {
+                validate: (val) => val === password || 'Passwords do not match'
+              })}
+            />
+
+            <div className="pt-2">
+              <PosterButton type="submit" variant="primary" size="lg" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? 'SAVING...' : 'SAVE PASSWORD'}
+              </PosterButton>
             </div>
-          ) : (
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <Input
-                label="New Password"
-                type="password"
-                icon={Lock}
-                placeholder="••••••••"
-                error={errors.password?.message}
-                {...register('password', {
-                  required: 'Password is required',
-                  minLength: { value: 6, message: 'Minimum 6 characters' }
-                })}
-              />
-
-              <Input
-                label="Confirm New Password"
-                type="password"
-                icon={Lock}
-                placeholder="••••••••"
-                error={errors.confirmPassword?.message}
-                {...register('confirmPassword', {
-                  validate: (val) => val === password || 'Passwords do not match'
-                })}
-              />
-
-              <Button type="submit" variant="primary" size="md" className="w-full" isLoading={isSubmitting}>
-                Save Password
-              </Button>
-            </form>
-          )}
-        </Card>
+          </form>
+        )}
       </div>
     </div>
   );
 }
+
+export default ResetPasswordPage;

@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { workspaceService } from '../../services/workspaceService.js';
-import { Card } from '../../components/ui/Card.jsx';
-import { Button } from '../../components/ui/Button.jsx';
-import { LoadingState } from '../../components/common/LoadingState.jsx';
-import { Users, CheckCircle, AlertCircle, ArrowRight } from 'lucide-react';
+import { PosterButton } from '../../components/ui/PosterButton.jsx';
+import { Users, CheckCircle, AlertCircle } from 'lucide-react';
 
 export function AcceptInvitePage() {
   const [searchParams] = useSearchParams();
@@ -24,7 +22,6 @@ export function AcceptInvitePage() {
 
     const authToken = localStorage.getItem('wrapai_token');
     if (!authToken) {
-      // Store token in session and redirect to login
       sessionStorage.setItem('pending_invite_token', token);
       navigate(`/login?redirect=/invite/accept?token=${token}`);
       return;
@@ -44,55 +41,57 @@ export function AcceptInvitePage() {
   };
 
   return (
-    <div className="max-w-md mx-auto py-16 px-4">
-      <Card className="p-8 bg-brand-white border border-brand-charcoal/20 shadow-2xl text-center space-y-6">
-        <div className="w-12 h-12 bg-brand-navy text-brand-white flex items-center justify-center mx-auto">
-          <Users className="w-6 h-6 text-brand-cyan" />
+    <div className="max-w-lg mx-auto py-20 px-6">
+      <div className="p-8 sm:p-12 bg-white/70 border border-[#C7C7C7] text-center space-y-8">
+        <div className="w-12 h-12 bg-[#141414] text-[#E3E2DE] flex items-center justify-center mx-auto">
+          <Users className="w-6 h-6 text-[#1351AA]" />
         </div>
 
-        <div>
-          <span className="text-[10px] font-mono font-bold tracking-widest text-brand-taupe uppercase">
+        <div className="space-y-2">
+          <span className="text-xs font-mono font-bold tracking-[0.2em] text-[#7A7A7A] uppercase block">
             WORKSPACE INVITATION
           </span>
-          <h2 className="font-display text-2xl uppercase tracking-wide text-brand-navy mt-1">
-            Join Team Workspace
+          <h2 className="text-3xl font-black uppercase tracking-tight text-[#141414]">
+            JOIN TEAM WORKSPACE.
           </h2>
-          <p className="text-xs text-brand-charcoal mt-1">
+          <p className="text-xs text-[#444343] leading-relaxed">
             You have been invited to collaborate on WrapAI meetings, intelligence summaries, and reports.
           </p>
         </div>
 
         {error && (
-          <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center space-x-2 text-left">
-            <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+          <div className="p-4 bg-[#9e1c1c]/10 border border-[#9e1c1c] text-[#9e1c1c] text-xs font-mono flex items-center space-x-3 text-left">
+            <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
         {isSuccess ? (
           <div className="space-y-4">
-            <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-center space-x-2">
-              <CheckCircle className="w-4 h-4 text-emerald-600" />
-              <span>Joined "{resultData?.workspace?.name}" successfully!</span>
+            <div className="p-4 bg-[#1b6b36]/10 border border-[#1b6b36] text-[#1b6b36] text-xs font-mono flex items-center justify-center space-x-2">
+              <CheckCircle className="w-4 h-4" />
+              <span>JOINED "{resultData?.workspace?.name}" SUCCESSFULLY</span>
             </div>
-            <Link to="/dashboard">
-              <Button variant="primary" size="md" className="w-full" icon={ArrowRight}>
-                Enter Workspace
-              </Button>
+            <Link to="/dashboard" className="block pt-2">
+              <PosterButton variant="primary" size="lg" className="w-full">
+                ENTER WORKSPACE
+              </PosterButton>
             </Link>
           </div>
         ) : (
-          <Button
+          <PosterButton
             variant="primary"
-            size="md"
+            size="lg"
             className="w-full"
             disabled={isLoading}
             onClick={handleAccept}
           >
-            {isLoading ? 'Joining Workspace...' : 'Accept Invitation'}
-          </Button>
+            {isLoading ? 'JOINING WORKSPACE...' : 'ACCEPT INVITATION'}
+          </PosterButton>
         )}
-      </Card>
+      </div>
     </div>
   );
 }
+
+export default AcceptInvitePage;

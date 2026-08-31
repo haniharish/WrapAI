@@ -1,20 +1,30 @@
 import React from 'react';
-import { AlertTriangle } from 'lucide-react';
-import { Button } from '../ui/Button.jsx';
+import { PosterButton } from '../ui/PosterButton.jsx';
 
-export function ErrorState({ title = 'Error Encountered', message = 'Something went wrong while fetching data.', onRetry }) {
+export function ErrorState({
+  title = 'SYSTEM FAULT',
+  message = 'An unexpected error occurred while communicating with the intelligence service.',
+  onRetry,
+  className = ''
+}) {
   return (
-    <div className="flex flex-col items-center justify-center p-12 text-center border border-red-200 bg-red-50/50">
-      <div className="w-12 h-12 bg-red-100 border border-red-300 flex items-center justify-center text-red-700 mb-4">
-        <AlertTriangle className="w-6 h-6" />
-      </div>
-      <h3 className="font-display text-2xl uppercase text-red-900 mb-2">{title}</h3>
-      <p className="text-sm text-red-700 max-w-md mb-6">{message}</p>
+    <div className={`flex flex-col items-center justify-center p-12 text-center border border-[#9e1c1c] bg-[#9e1c1c]/5 space-y-3 ${className}`}>
+      <span className="font-mono text-xs font-bold text-[#9e1c1c] uppercase tracking-[0.2em]">
+        ERROR CODE 500
+      </span>
+      <h3 className="text-2xl font-bold uppercase tracking-tight text-[#9e1c1c]">
+        {title}
+      </h3>
+      <p className="text-sm text-[#444343] max-w-md leading-relaxed">{message}</p>
       {onRetry && (
-        <Button variant="outline" size="sm" onClick={onRetry}>
-          Try Again
-        </Button>
+        <div className="pt-2">
+          <PosterButton variant="secondary" size="sm" onClick={onRetry}>
+            RETRY OPERATION
+          </PosterButton>
+        </div>
       )}
     </div>
   );
 }
+
+export default ErrorState;

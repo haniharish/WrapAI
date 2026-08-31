@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { toggleRole, logout } from '../store/slices/authSlice.js';
+import { logout } from '../store/slices/authSlice.js';
 import {
   LayoutDashboard,
   FolderOpen,
@@ -9,14 +9,11 @@ import {
   Settings,
   UploadCloud,
   LogOut,
-  Shield,
-  User,
-  Sparkles,
   Users,
   Search
 } from 'lucide-react';
 import { clsx } from 'clsx';
-import { Button } from '../components/ui/Button.jsx';
+import { PosterButton } from '../components/ui/PosterButton.jsx';
 import { ToastContainer } from '../components/ui/Toast.jsx';
 import { WorkspaceSwitcher } from '../components/workspace/WorkspaceSwitcher.jsx';
 import { NotificationBell } from '../components/notifications/NotificationBell.jsx';
@@ -31,11 +28,11 @@ export function UserLayout() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const navItems = [
-    { to: '/dashboard', label: 'Overview', icon: LayoutDashboard },
-    { to: '/content', label: 'My Content', icon: FolderOpen },
-    { to: '/reports', label: 'Reports', icon: FileText },
-    { to: '/workspace/settings', label: 'Team Space', icon: Users },
-    { to: '/settings', label: 'Settings', icon: Settings }
+    { to: '/dashboard', label: 'OVERVIEW', icon: LayoutDashboard },
+    { to: '/content', label: 'CONTENT', icon: FolderOpen },
+    { to: '/reports', label: 'REPORTS', icon: FileText },
+    { to: '/workspace/settings', label: 'WORKSPACE', icon: Users },
+    { to: '/settings', label: 'SETTINGS', icon: Settings }
   ];
 
   const handleLogout = () => {
@@ -44,31 +41,31 @@ export function UserLayout() {
   };
 
   return (
-    <div className="min-h-screen flex bg-brand-light text-brand-navy">
-      {/* Sidebar Navigation */}
-      <aside className="w-64 bg-brand-white border-r border-brand-charcoal/15 flex flex-col justify-between flex-shrink-0 z-30">
+    <div className="min-h-screen flex flex-col md:flex-row bg-[#E3E2DE] text-[#141414]">
+      {/* Editorial Left Sidebar (Desktop) */}
+      <aside className="w-full md:w-64 bg-[#E3E2DE] border-b md:border-b-0 md:border-r border-[#C7C7C7] flex flex-col justify-between flex-shrink-0 z-30">
         <div>
           {/* Logo Brand Header */}
-          <div className="h-20 px-6 flex items-center justify-between border-b border-brand-charcoal/10">
-            <Link to="/" className="flex items-center space-x-2.5">
-              <span className="font-display text-2xl tracking-wider text-brand-navy">WrapAI</span>
-              <span className="text-[9px] font-mono uppercase bg-brand-navy text-brand-white px-1.5 py-0.5">
-                WORKSPACE
+          <div className="h-20 px-6 flex items-center justify-between border-b border-[#C7C7C7]">
+            <Link to="/" className="flex items-center space-x-3">
+              <div className="w-3.5 h-3.5 bg-[#141414]" />
+              <span className="text-xl font-black tracking-tight text-[#141414] uppercase hover:text-[#1351AA] transition-colors">
+                WRAPAI
               </span>
             </Link>
           </div>
 
           {/* Workspace Switcher */}
-          <div className="p-3 border-b border-brand-charcoal/10">
+          <div className="p-3 border-b border-[#C7C7C7]">
             <WorkspaceSwitcher />
           </div>
 
           {/* Primary Action Button */}
-          <div className="p-3 border-b border-brand-charcoal/10">
-            <Link to="/upload">
-              <Button variant="primary" size="md" className="w-full" icon={UploadCloud}>
-                Upload Content
-              </Button>
+          <div className="p-3 border-b border-[#C7C7C7]">
+            <Link to="/upload" className="block">
+              <PosterButton variant="primary" size="sm" className="w-full justify-center" icon={UploadCloud}>
+                UPLOAD CONTENT
+              </PosterButton>
             </Link>
           </div>
 
@@ -82,60 +79,42 @@ export function UserLayout() {
                   to={item.to}
                   className={({ isActive }) =>
                     clsx(
-                      'flex items-center px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all duration-200 border',
+                      'flex items-center px-4 py-3 text-xs font-bold uppercase tracking-[0.15em] transition-colors duration-300 ease-linear border',
                       isActive
-                        ? 'bg-brand-navy text-brand-white border-brand-navy shadow-sm'
-                        : 'bg-transparent text-brand-charcoal border-transparent hover:bg-brand-sage/20 hover:text-brand-navy'
+                        ? 'bg-[#141414] text-[#E3E2DE] border-[#141414]'
+                        : 'bg-transparent text-[#141414] border-transparent hover:bg-white/60 hover:text-[#1351AA]'
                     )
                   }
                 >
-                  <Icon className="w-4 h-4 mr-3" />
-                  {item.label}
+                  <Icon className="w-4 h-4 mr-3 flex-shrink-0" />
+                  <span>{item.label}</span>
                 </NavLink>
               );
             })}
           </nav>
         </div>
 
-        {/* User Account / Role Switcher Widget */}
-        <div className="p-4 border-t border-brand-charcoal/15 bg-brand-light/50">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center space-x-2.5">
-              <img
-                src={user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
-                alt={user?.fullName}
-                className="w-8 h-8 rounded-none border border-brand-navy object-cover"
-              />
-              <div className="truncate">
-                <p className="text-xs font-bold text-brand-navy truncate">{user?.fullName || 'User'}</p>
-                <p className="text-[10px] text-brand-taupe font-mono truncate">{user?.email}</p>
-              </div>
+        {/* User Account / Role Widget */}
+        <div className="p-4 border-t border-[#C7C7C7] bg-white/40 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="truncate">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#141414] truncate">{user?.fullName || 'USER'}</p>
+              <p className="text-[10px] text-[#7A7A7A] font-mono truncate">{user?.email}</p>
             </div>
-          </div>
-
-          <div className="flex items-center justify-between pt-2 border-t border-brand-charcoal/10">
-            <button
-              onClick={() => dispatch(toggleRole())}
-              className="flex items-center text-[10px] font-mono text-brand-charcoal hover:text-brand-navy"
-              title="Switch between User & Admin role demo states"
-            >
-              <Shield className="w-3 h-3 mr-1 text-brand-navy" />
-              Role: <span className="font-bold ml-1">{role}</span>
-            </button>
             <button
               onClick={handleLogout}
-              className="text-brand-taupe hover:text-red-700 p-1"
+              className="text-[#7A7A7A] hover:text-[#9e1c1c] p-1.5 transition-colors cursor-pointer"
               title="Sign Out"
             >
-              <LogOut className="w-3.5 h-3.5" />
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
 
           {role === 'ADMIN' && (
-            <Link to="/admin" className="block mt-2">
-              <Button variant="outline" size="sm" className="w-full text-[10px] py-1">
-                Go to Admin Dashboard
-              </Button>
+            <Link to="/admin" className="block pt-1">
+              <PosterButton variant="outline" size="sm" className="w-full text-[10px] py-1.5">
+                ADMIN SYSTEM
+              </PosterButton>
             </Link>
           )}
         </div>
@@ -143,29 +122,28 @@ export function UserLayout() {
 
       {/* Main Workspace Canvas */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <header className="h-16 bg-brand-white border-b border-brand-charcoal/15 px-8 flex items-center justify-between sticky top-0 z-20">
+        <header className="h-20 bg-[#E3E2DE]/95 backdrop-blur-xs border-b border-[#C7C7C7] px-6 sm:px-8 flex items-center justify-between sticky top-0 z-20">
           {/* Global Search Bar Trigger */}
           <button
             onClick={() => setIsSearchOpen(true)}
-            className="flex items-center space-x-2 px-3 py-1.5 bg-brand-light border border-brand-charcoal/15 text-xs text-brand-taupe hover:border-brand-charcoal/30 transition-all font-mono"
+            className="flex items-center space-x-3 px-4 py-2.5 bg-white/70 border border-[#C7C7C7] text-xs text-[#7A7A7A] hover:border-[#1351AA] hover:text-[#141414] transition-colors duration-300 font-mono cursor-pointer"
           >
-            <Search className="w-3.5 h-3.5" />
-            <span>Search WrapAI (Ctrl+K)...</span>
+            <Search className="w-3.5 h-3.5 text-[#1351AA]" />
+            <span>SEARCH WRAPAI (CTRL+K)...</span>
           </button>
 
           {/* Action Tools & Notifications */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-4">
             <NotificationBell />
-
-            <Link to="/upload">
-              <Button variant="secondary" size="sm" icon={Sparkles}>
-                Quick Ingest
-              </Button>
+            <Link to="/upload" className="hidden sm:block">
+              <PosterButton variant="secondary" size="sm">
+                + INGEST
+              </PosterButton>
             </Link>
           </div>
         </header>
 
-        <main className="flex-1 p-6 sm:p-8">
+        <main className="flex-1 p-6 sm:p-8 lg:p-10 max-w-[1400px] w-full mx-auto">
           <Outlet />
         </main>
       </div>
@@ -177,3 +155,5 @@ export function UserLayout() {
     </div>
   );
 }
+
+export default UserLayout;

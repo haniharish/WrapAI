@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { reportService } from '../../services/reportService.js';
-import { Button } from '../../components/ui/Button.jsx';
-import { Card } from '../../components/ui/Card.jsx';
-import { Badge } from '../../components/ui/Badge.jsx';
+import { PosterButton } from '../../components/ui/PosterButton.jsx';
 import { LoadingState } from '../../components/common/LoadingState.jsx';
-import { FileText, Download, Eye, Trash2, Share2, Sparkles, Filter } from 'lucide-react';
+import { EmptyState } from '../../components/common/EmptyState.jsx';
+import { GridSidebarLabel } from '../../components/ui/GridSidebarLabel.jsx';
+import { Download, Eye, Trash2 } from 'lucide-react';
 import { formatDate } from '../../utils/formatters.js';
 
 export function ReportsListPage() {
@@ -54,108 +54,115 @@ export function ReportsListPage() {
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-brand-charcoal/15">
-        <div>
-          <span className="text-xs font-mono font-bold uppercase tracking-widest text-brand-taupe">EXPORTED INTELLIGENCE</span>
-          <h1 className="font-display text-4xl uppercase tracking-tight text-brand-navy mt-1">
-            Generated Reports
-          </h1>
-          <p className="text-xs text-brand-taupe mt-1">
-            Formal executive minutes, lecture summaries, and interview briefs compiled from your content.
-          </p>
-        </div>
+    <div className="space-y-12">
+      {/* 1. Header */}
+      <div className="border-b border-[#C7C7C7] pb-8">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+          <div className="space-y-2">
+            <span className="font-mono text-xs font-bold text-[#1351AA] uppercase tracking-[0.2em] block">
+              EXPORTED INTELLIGENCE
+            </span>
+            <h1 className="text-poster-section text-[#141414]">
+              GENERATED <br />
+              <span className="text-[#1351AA]">REPORTS.</span>
+            </h1>
+            <p className="text-xs font-mono text-[#7A7A7A] uppercase">
+              EXECUTIVE SUMMARIES, MINUTES & BRIEFINGS COMPILED ACROSS WORKSPACES
+            </p>
+          </div>
 
-        {/* Format Filter Bar */}
-        <div className="flex items-center space-x-1.5 p-1 bg-brand-light border border-brand-charcoal/15 text-xs">
-          <Filter className="w-3.5 h-3.5 text-brand-taupe ml-2" />
-          {['ALL', 'PDF', 'DOCX', 'MARKDOWN', 'TXT'].map((fmt) => (
-            <button
-              key={fmt}
-              onClick={() => setSelectedFormat(fmt)}
-              className={`px-3 py-1 font-mono text-[11px] transition-all uppercase ${
-                selectedFormat === fmt
-                  ? 'bg-brand-navy text-brand-white'
-                  : 'bg-transparent text-brand-charcoal hover:bg-brand-white'
-              }`}
-            >
-              {fmt}
-            </button>
-          ))}
+          {/* Format Filter Bar */}
+          <div className="flex flex-wrap items-center gap-2 p-1 bg-white/70 border border-[#C7C7C7]">
+            {['ALL', 'PDF', 'DOCX', 'MARKDOWN', 'TXT'].map((fmt) => (
+              <button
+                key={fmt}
+                onClick={() => setSelectedFormat(fmt)}
+                className={`px-3 py-1.5 font-mono text-xs font-bold uppercase transition-colors cursor-pointer ${
+                  selectedFormat === fmt
+                    ? 'bg-[#141414] text-[#E3E2DE]'
+                    : 'bg-transparent text-[#141414] hover:bg-white/80'
+                }`}
+              >
+                {fmt}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {isLoading ? (
-        <LoadingState message="Loading compiled reports..." />
-      ) : reports.length === 0 ? (
-        <Card className="p-12 text-center bg-brand-light/40 border-brand-charcoal/15">
-          <FileText className="w-10 h-10 text-brand-taupe mx-auto mb-3" />
-          <h3 className="font-display text-xl uppercase text-brand-navy">No Reports Generated Yet</h3>
-          <p className="text-xs text-brand-taupe mt-1 max-w-md mx-auto">
-            Open any processed content item in your workspace and click "Generate Report" to create PDF, Word, or Markdown summaries.
+      {/* 2. Numbered Reports List */}
+      <div className="grid grid-cols-12 gap-8">
+        <GridSidebarLabel label="REPORTS LIST" index="01">
+          <p className="text-xs font-mono text-[#7A7A7A] uppercase leading-relaxed">
+            PAGINATED REGISTRY ({reports.length} READY)
           </p>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {reports.map((rep) => (
-            <Card key={rep.id} hover className="flex flex-col justify-between p-6">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <Badge variant={rep.format === 'PDF' ? 'navy' : 'cyan'}>
-                    {rep.format} • v{rep.version}
-                  </Badge>
-                  <span className="text-[11px] font-mono text-brand-taupe">{formatDate(rep.createdAt)}</span>
-                </div>
+        </GridSidebarLabel>
 
-                <h3 className="font-display text-xl uppercase tracking-wide text-brand-navy mb-1.5">
-                  {rep.title}
-                </h3>
-                <p className="text-xs text-brand-taupe line-clamp-1 mb-4">
-                  Source: {rep.contentTitle || 'Recording'}
-                </p>
-
-                <div className="flex flex-wrap gap-1.5 mb-6">
-                  {rep.sections?.slice(0, 4).map((sec, idx) => (
-                    <span key={idx} className="text-[10px] font-mono bg-brand-sage/20 text-brand-charcoal px-2 py-0.5 border border-brand-sage/40">
-                      {sec}
-                    </span>
-                  ))}
-                  {rep.sections?.length > 4 && (
-                    <span className="text-[10px] font-mono text-brand-taupe px-1 py-0.5">
-                      +{rep.sections.length - 4} more
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-brand-charcoal/10 flex items-center justify-between gap-2">
-                <Link to={`/content/${rep.contentId}/report`} className="flex-1">
-                  <Button variant="outline" size="sm" className="w-full" icon={Eye}>
-                    View
-                  </Button>
-                </Link>
-
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => handleDownload(rep)}
-                  icon={Download}
+        <div className="col-span-12 lg:col-span-9 space-y-6">
+          {isLoading ? (
+            <LoadingState message="LOADING COMPILED REPORTS..." />
+          ) : reports.length === 0 ? (
+            <EmptyState
+              title="NO COMPILED REPORTS"
+              description="Open any processed content item in your workspace and click 'Generate Report' to create PDF, Word, or Markdown summaries."
+            />
+          ) : (
+            <div className="divide-y divide-[#C7C7C7] border-y border-[#C7C7C7]">
+              {reports.map((rep, idx) => (
+                <div
+                  key={rep.id}
+                  className="py-6 flex flex-col md:flex-row md:items-center justify-between gap-6 group hover:bg-white/60 px-4 transition-colors duration-300"
                 >
-                  {rep.format}
-                </Button>
+                  <div className="flex items-start space-x-4">
+                    <span className="font-mono text-sm font-bold text-[#7A7A7A] group-hover:text-[#1351AA]">
+                      0{idx + 1}
+                    </span>
+                    <div className="space-y-1.5">
+                      <Link to={`/content/${rep.contentId}/report`}>
+                        <h3 className="text-xl sm:text-2xl font-bold uppercase tracking-tight text-[#141414] group-hover:text-[#1351AA] transition-colors">
+                          {rep.title}
+                        </h3>
+                      </Link>
+                      <div className="flex flex-wrap items-center gap-3 text-xs font-mono text-[#7A7A7A]">
+                        <span className="font-bold text-[#1351AA]">{rep.format} (V{rep.version})</span>
+                        <span>•</span>
+                        <span>SOURCE: {rep.contentTitle || 'RECORDING'}</span>
+                        <span>•</span>
+                        <span>{formatDate(rep.createdAt)}</span>
+                      </div>
+                    </div>
+                  </div>
 
-                <button
-                  onClick={() => handleDelete(rep.id)}
-                  className="p-2 text-brand-taupe hover:text-rose-600 transition-colors"
-                  title="Delete report"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </Card>
-          ))}
+                  <div className="flex items-center space-x-3 self-end md:self-center">
+                    <Link to={`/content/${rep.contentId}/report`}>
+                      <PosterButton variant="outline" size="sm" icon={Eye}>
+                        VIEW
+                      </PosterButton>
+                    </Link>
+                    <PosterButton
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleDownload(rep)}
+                      icon={Download}
+                    >
+                      DOWNLOAD
+                    </PosterButton>
+                    <button
+                      onClick={() => handleDelete(rep.id)}
+                      className="p-2 border border-[#C7C7C7] hover:border-[#9e1c1c] hover:text-[#9e1c1c] text-[#7A7A7A] transition-colors cursor-pointer"
+                      title="Delete Report"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
+
+export default ReportsListPage;

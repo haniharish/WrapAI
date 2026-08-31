@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { workspaceService } from '../../services/workspaceService.js';
-import { Users, ChevronDown, Plus, Check, Shield } from 'lucide-react';
-import { Button } from '../ui/Button.jsx';
-import { Card } from '../ui/Card.jsx';
+import { Users, ChevronDown, Plus, Check } from 'lucide-react';
+import { PosterButton } from '../ui/PosterButton.jsx';
+import { Input } from '../ui/Input.jsx';
 
 export function WorkspaceSwitcher({ onWorkspaceChange }) {
   const [workspaces, setWorkspaces] = useState([]);
@@ -62,40 +62,40 @@ export function WorkspaceSwitcher({ onWorkspaceChange }) {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-2 text-xs font-bold uppercase tracking-wider bg-brand-light/60 hover:bg-brand-light border border-brand-charcoal/15 transition-colors"
+        className="w-full flex items-center justify-between p-2.5 text-xs font-bold uppercase tracking-wider bg-white/60 hover:bg-white border border-[#C7C7C7] transition-colors cursor-pointer"
       >
         <div className="flex items-center space-x-2 truncate">
-          <Users className="w-3.5 h-3.5 text-brand-navy flex-shrink-0" />
-          <span className="truncate text-brand-navy">{activeWorkspace?.name || 'My Space'}</span>
+          <Users className="w-3.5 h-3.5 text-[#1351AA] shrink-0" />
+          <span className="truncate text-[#141414]">{activeWorkspace?.name || 'WORKSPACE'}</span>
         </div>
-        <div className="flex items-center space-x-1 flex-shrink-0">
-          <span className="text-[9px] font-mono bg-brand-navy/10 text-brand-navy px-1 py-0.2">
+        <div className="flex items-center space-x-1.5 shrink-0">
+          <span className="text-[9px] font-mono bg-[#141414] text-[#E3E2DE] px-1.5 py-0.2">
             {activeWorkspace?.userRole || 'OWNER'}
           </span>
-          <ChevronDown className="w-3.5 h-3.5 text-brand-taupe" />
+          <ChevronDown className="w-3.5 h-3.5 text-[#7A7A7A]" />
         </div>
       </button>
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-brand-white border border-brand-charcoal/20 shadow-xl z-50 py-1 divide-y divide-brand-charcoal/10 text-xs">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#141414] z-50 py-1 divide-y divide-[#C7C7C7] text-xs shadow-none">
           <div className="py-1">
-            <span className="px-3 py-1 block text-[10px] font-mono text-brand-taupe uppercase">
-              Workspaces
+            <span className="px-3 py-1 block text-[10px] font-mono text-[#7A7A7A] uppercase font-bold">
+              WORKSPACES
             </span>
             {workspaces.map((ws) => (
               <button
                 key={ws.id}
                 onClick={() => handleSelectWorkspace(ws)}
-                className={`w-full px-3 py-2 text-left flex items-center justify-between hover:bg-brand-light transition-colors ${
-                  activeWorkspace?.id === ws.id ? 'bg-brand-sage/15 font-bold text-brand-navy' : 'text-brand-charcoal'
+                className={`w-full px-3 py-2 text-left flex items-center justify-between hover:bg-[#E3E2DE] transition-colors cursor-pointer ${
+                  activeWorkspace?.id === ws.id ? 'bg-[#1351AA]/10 font-bold text-[#141414]' : 'text-[#444343]'
                 }`}
               >
                 <div className="truncate">
-                  <div className="truncate text-xs">{ws.name}</div>
-                  <span className="text-[10px] font-mono text-brand-taupe block uppercase">{ws.type} • {ws.userRole}</span>
+                  <div className="truncate text-xs uppercase font-bold">{ws.name}</div>
+                  <span className="text-[10px] font-mono text-[#7A7A7A] block uppercase">{ws.type} • {ws.userRole}</span>
                 </div>
-                {activeWorkspace?.id === ws.id && <Check className="w-3.5 h-3.5 text-brand-navy flex-shrink-0" />}
+                {activeWorkspace?.id === ws.id && <Check className="w-3.5 h-3.5 text-[#1351AA] shrink-0" />}
               </button>
             ))}
           </div>
@@ -106,10 +106,10 @@ export function WorkspaceSwitcher({ onWorkspaceChange }) {
                 setIsOpen(false);
                 setShowCreateModal(true);
               }}
-              className="w-full flex items-center justify-center space-x-1 py-1.5 border border-dashed border-brand-charcoal/30 text-brand-navy hover:bg-brand-light transition-colors font-mono text-[11px]"
+              className="w-full flex items-center justify-center space-x-1 py-2 border border-dashed border-[#141414] text-[#141414] hover:bg-[#E3E2DE] transition-colors font-mono text-xs uppercase font-bold cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>New Team Workspace</span>
+              <span>NEW TEAM WORKSPACE</span>
             </button>
           </div>
         </div>
@@ -117,43 +117,39 @@ export function WorkspaceSwitcher({ onWorkspaceChange }) {
 
       {/* Create Team Workspace Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <Card className="w-full max-w-sm p-6 bg-brand-white border border-brand-charcoal/20 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-brand-charcoal/15 pb-3">
-              <h3 className="font-display text-lg uppercase tracking-wide text-brand-navy flex items-center space-x-2">
-                <Users className="w-4 h-4 text-brand-navy" />
-                <span>Create Team Workspace</span>
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-sm p-8 bg-white border border-[#141414] space-y-6">
+            <div className="flex items-center justify-between border-b border-[#C7C7C7] pb-4">
+              <h3 className="font-bold uppercase tracking-tight text-lg text-[#141414] flex items-center space-x-2">
+                <Users className="w-4 h-4 text-[#1351AA]" />
+                <span>CREATE WORKSPACE</span>
               </h3>
-              <button onClick={() => setShowCreateModal(false)} className="text-brand-taupe hover:text-brand-navy text-lg font-bold">×</button>
+              <button onClick={() => setShowCreateModal(false)} className="text-[#7A7A7A] hover:text-[#141414] text-xl font-bold cursor-pointer">×</button>
             </div>
 
-            <form onSubmit={handleCreateWorkspace} className="space-y-4">
-              <div>
-                <label className="block text-xs font-mono font-bold uppercase text-brand-charcoal mb-1">
-                  Workspace Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Engineering Intelligence"
-                  value={newWsName}
-                  onChange={(e) => setNewWsName(e.target.value)}
-                  className="w-full p-2 text-xs border border-brand-charcoal/20 bg-brand-light focus:outline-none focus:ring-1 focus:ring-brand-navy"
-                />
-              </div>
+            <form onSubmit={handleCreateWorkspace} className="space-y-5">
+              <Input
+                label="WORKSPACE NAME"
+                required
+                placeholder="e.g. Engineering Intelligence"
+                value={newWsName}
+                onChange={(e) => setNewWsName(e.target.value)}
+              />
 
-              <div className="flex items-center justify-end space-x-2 pt-2 border-t border-brand-charcoal/15">
-                <Button variant="outline" size="sm" type="button" onClick={() => setShowCreateModal(false)}>
-                  Cancel
-                </Button>
-                <Button variant="primary" size="sm" type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Creating...' : 'Create Workspace'}
-                </Button>
+              <div className="flex items-center justify-end space-x-2 pt-2 border-t border-[#C7C7C7]">
+                <PosterButton variant="outline" size="sm" type="button" onClick={() => setShowCreateModal(false)}>
+                  CANCEL
+                </PosterButton>
+                <PosterButton variant="primary" size="sm" type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'CREATING...' : 'CREATE'}
+                </PosterButton>
               </div>
             </form>
-          </Card>
+          </div>
         </div>
       )}
     </div>
   );
 }
+
+export default WorkspaceSwitcher;

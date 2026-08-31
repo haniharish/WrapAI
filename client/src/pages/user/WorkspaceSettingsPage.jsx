@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { workspaceService } from '../../services/workspaceService.js';
-import { Card } from '../../components/ui/Card.jsx';
-import { Button } from '../../components/ui/Button.jsx';
-import { Badge } from '../../components/ui/Badge.jsx';
+import { PosterButton } from '../../components/ui/PosterButton.jsx';
+import { Input } from '../../components/ui/Input.jsx';
+import { Select } from '../../components/ui/Select.jsx';
+import { Tabs } from '../../components/ui/Tabs.jsx';
 import { LoadingState } from '../../components/common/LoadingState.jsx';
-import { Users, UserPlus, Shield, Trash2, Copy, Check, Activity, Settings as SettingsIcon } from 'lucide-react';
+import { GridSidebarLabel } from '../../components/ui/GridSidebarLabel.jsx';
+import { Trash2, Copy, Check } from 'lucide-react';
 import { formatDate } from '../../utils/formatters.js';
 
 export function WorkspaceSettingsPage() {
   const [workspace, setWorkspace] = useState(null);
   const [auditLogs, setAuditLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('MEMBERS'); // 'MEMBERS' | 'INVITE' | 'AUDIT'
+  const [activeTab, setActiveTab] = useState('MEMBERS');
 
   // Invite form state
   const [inviteEmail, setInviteEmail] = useState('');
@@ -37,7 +39,6 @@ export function WorkspaceSettingsPage() {
         const detailRes = await workspaceService.getWorkspaceById(target.id);
         setWorkspace(detailRes.data);
 
-        // Load audit logs if owner/admin
         if (['OWNER', 'ADMIN'].includes(detailRes.data.userRole)) {
           const logsRes = await workspaceService.getAuditLogs(target.id);
           setAuditLogs(logsRes.data || []);
@@ -95,232 +96,215 @@ export function WorkspaceSettingsPage() {
     }
   };
 
-  if (isLoading) return <LoadingState message="Loading workspace settings & team access..." />;
+  if (isLoading) return <LoadingState message="LOADING WORKSPACE ROSTER & POLICIES..." />;
 
   const isOwnerOrAdmin = ['OWNER', 'ADMIN'].includes(workspace?.userRole);
 
+  const tabs = [
+    { id: 'MEMBERS', label: `MEMBERS (${workspace?.members?.length || 1})` },
+    ...(isOwnerOrAdmin
+      ? [
+          { id: 'INVITE', label: 'INVITE TEAMMATES' },
+          { id: 'AUDIT', label: 'AUDIT TRAIL' }
+        ]
+      : [])
+  ];
+
   return (
-    <div className="space-y-8 max-w-5xl">
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-brand-charcoal/15">
-        <div>
-          <span className="text-xs font-mono font-bold uppercase tracking-widest text-brand-taupe">
-            TEAM & ACCESS CONTROL
-          </span>
-          <h1 className="font-display text-4xl uppercase tracking-tight text-brand-navy mt-1">
-            {workspace?.name || 'Workspace Settings'}
-          </h1>
-          <p className="text-xs text-brand-taupe mt-1">
-            Manage team members, roles, invitations, and workspace security policies.
-          </p>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Badge variant={workspace?.type === 'TEAM' ? 'navy' : 'sage'}>
-            {workspace?.type || 'PERSONAL'} SPACE
-          </Badge>
-          <Badge variant="cyan">{workspace?.plan || 'FREE'} PLAN</Badge>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex items-center space-x-2 border-b border-brand-charcoal/15 text-xs font-bold uppercase tracking-wider">
-        <button
-          onClick={() => setActiveTab('MEMBERS')}
-          className={`px-4 py-2 border-b-2 transition-all ${
-            activeTab === 'MEMBERS'
-              ? 'border-brand-navy text-brand-navy font-bold'
-              : 'border-transparent text-brand-taupe hover:text-brand-navy'
-          }`}
-        >
-          Members ({workspace?.members?.length || 1})
-        </button>
-        {isOwnerOrAdmin && (
-          <>
-            <button
-              onClick={() => setActiveTab('INVITE')}
-              className={`px-4 py-2 border-b-2 transition-all ${
-                activeTab === 'INVITE'
-                  ? 'border-brand-navy text-brand-navy font-bold'
-                  : 'border-transparent text-brand-taupe hover:text-brand-navy'
-              }`}
-            >
-              Invite Teammates
-            </button>
-            <button
-              onClick={() => setActiveTab('AUDIT')}
-              className={`px-4 py-2 border-b-2 transition-all ${
-                activeTab === 'AUDIT'
-                  ? 'border-brand-navy text-brand-navy font-bold'
-                  : 'border-transparent text-brand-taupe hover:text-brand-navy'
-              }`}
-            >
-              Audit Activity
-            </button>
-          </>
-        )}
-      </div>
-
-      {/* Tab 1: Members List */}
-      {activeTab === 'MEMBERS' && (
-        <Card className="p-6 divide-y divide-brand-charcoal/10 bg-brand-white border-brand-charcoal/20">
-          <div className="pb-4 flex items-center justify-between">
-            <span className="font-display uppercase text-lg text-brand-navy">Team Roster</span>
-            <span className="text-xs font-mono text-brand-taupe">{workspace?.members?.length} active members</span>
-          </div>
-
-          <div className="divide-y divide-brand-charcoal/5 pt-2">
-            {(workspace?.members || []).map((m) => {
-              const u = m.userId || {};
-              const isOwner = m.role === 'OWNER';
-
-              return (
-                <div key={m.id || m._id} className="py-3.5 flex items-center justify-between text-xs">
-                  <div className="flex items-center space-x-3">
-                    <img
-                      src={u.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
-                      alt={u.fullName}
-                      className="w-8 h-8 rounded-none border border-brand-navy object-cover"
-                    />
-                    <div>
-                      <div className="font-bold text-brand-navy">{u.fullName || 'User'}</div>
-                      <div className="font-mono text-[10px] text-brand-taupe">{u.email}</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    {isOwnerOrAdmin && !isOwner ? (
-                      <select
-                        value={m.role}
-                        onChange={(e) => handleRoleChange(u.id || u._id, e.target.value)}
-                        className="p-1 border border-brand-charcoal/20 bg-brand-light text-[11px] font-mono"
-                      >
-                        <option value="VIEWER">VIEWER</option>
-                        <option value="EDITOR">EDITOR</option>
-                        <option value="ADMIN">ADMIN</option>
-                      </select>
-                    ) : (
-                      <Badge variant={isOwner ? 'navy' : 'cyan'}>{m.role}</Badge>
-                    )}
-
-                    {isOwnerOrAdmin && !isOwner && (
-                      <button
-                        onClick={() => handleRemoveMember(u.id || u._id)}
-                        className="text-brand-taupe hover:text-rose-600 p-1"
-                        title="Remove member"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </Card>
-      )}
-
-      {/* Tab 2: Invite Teammates */}
-      {activeTab === 'INVITE' && (
-        <Card className="p-6 bg-brand-white border-brand-charcoal/20 space-y-6">
-          <div className="border-b border-brand-charcoal/15 pb-3">
-            <h3 className="font-display text-xl uppercase tracking-wide text-brand-navy">
-              Invite New Team Member
-            </h3>
-            <p className="text-xs text-brand-taupe">
-              Generate a cryptographic single-use invitation link with specific role permissions.
+    <div className="space-y-12">
+      {/* 1. Header */}
+      <div className="border-b border-[#C7C7C7] pb-8">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+          <div className="space-y-2">
+            <span className="font-mono text-xs font-bold text-[#1351AA] uppercase tracking-[0.2em] block">
+              COLLABORATION & ACCESS CONTROL
+            </span>
+            <h1 className="text-poster-section text-[#141414]">
+              WORKSPACE <br />
+              <span className="text-[#1351AA]">SETTINGS.</span>
+            </h1>
+            <p className="text-xs font-mono text-[#7A7A7A] uppercase">
+              {workspace?.name || 'WORKSPACE'} • {workspace?.type || 'PERSONAL'} SPACE
             </p>
           </div>
+        </div>
+      </div>
 
-          <form onSubmit={handleSendInvite} className="space-y-4 max-w-md">
-            <div>
-              <label className="block text-xs font-mono font-bold uppercase text-brand-charcoal mb-1">
-                Recipient Email
-              </label>
-              <input
-                type="email"
-                required
-                placeholder="colleague@company.com"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                className="w-full p-2 text-xs border border-brand-charcoal/20 bg-brand-light focus:outline-none"
-              />
-            </div>
+      {/* 2. Workspace Management Canvas */}
+      <div className="grid grid-cols-12 gap-8">
+        <GridSidebarLabel label="ACCESS MANAGEMENT" index="01">
+          <p className="text-xs font-mono text-[#7A7A7A] uppercase leading-relaxed">
+            RBAC ROLE POLICIES
+          </p>
+        </GridSidebarLabel>
 
-            <div>
-              <label className="block text-xs font-mono font-bold uppercase text-brand-charcoal mb-1">
-                Assign Role
-              </label>
-              <select
-                value={inviteRole}
-                onChange={(e) => setInviteRole(e.target.value)}
-                className="w-full p-2 text-xs border border-brand-charcoal/20 bg-brand-light focus:outline-none font-mono"
-              >
-                <option value="VIEWER">VIEWER — Can view content, transcripts & reports</option>
-                <option value="EDITOR">EDITOR — Can upload content, edit & compile reports</option>
-                <option value="ADMIN">ADMIN — Can manage team members & workspace settings</option>
-              </select>
-            </div>
+        <div className="col-span-12 lg:col-span-9 bg-white/70 border border-[#C7C7C7] p-6 sm:p-10 space-y-8">
+          <Tabs
+            tabs={tabs}
+            activeTab={activeTab}
+            onChange={(tab) => setActiveTab(tab)}
+          />
 
-            <Button variant="primary" size="sm" type="submit" disabled={isSubmitting} icon={UserPlus}>
-              {isSubmitting ? 'Generating Invitation...' : 'Create Secure Invite Link'}
-            </Button>
-          </form>
+          {/* Tab 1: Members List */}
+          {activeTab === 'MEMBERS' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between pb-4 border-b border-[#C7C7C7]">
+                <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#7A7A7A]">
+                  ACTIVE COLLABORATORS
+                </span>
+                <span className="font-mono text-xs font-bold text-[#1351AA]">
+                  {workspace?.members?.length} MEMBERS
+                </span>
+              </div>
 
-          {/* Generated Link Box */}
-          {generatedInvite && (
-            <div className="p-4 bg-brand-light border border-brand-charcoal/20 space-y-2">
-              <span className="font-mono text-[10px] text-brand-taupe uppercase font-bold block">
-                Single-Use Invitation Link (Expires {new Date(generatedInvite.expiresAt).toLocaleDateString()})
-              </span>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="text"
-                  readOnly
-                  value={generatedInvite.inviteUrl}
-                  className="flex-1 p-2 text-xs font-mono bg-brand-white border border-brand-charcoal/20 select-all"
-                />
-                <Button variant="primary" size="sm" onClick={handleCopyLink} icon={isCopied ? Check : Copy}>
-                  {isCopied ? 'Copied' : 'Copy'}
-                </Button>
+              <div className="divide-y divide-[#C7C7C7] border-y border-[#C7C7C7]">
+                {(workspace?.members || []).map((m, idx) => {
+                  const u = m.userId || {};
+                  const isOwner = m.role === 'OWNER';
+
+                  return (
+                    <div key={m.id || m._id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-center space-x-4">
+                        <span className="font-mono text-sm font-bold text-[#7A7A7A]">
+                          0{idx + 1}
+                        </span>
+                        <div>
+                          <div className="font-bold uppercase text-sm text-[#141414]">{u.fullName || 'USER'}</div>
+                          <div className="font-mono text-xs text-[#7A7A7A]">{u.email}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-3 self-end sm:self-center">
+                        {isOwnerOrAdmin && !isOwner ? (
+                          <select
+                            value={m.role}
+                            onChange={(e) => handleRoleChange(u.id || u._id, e.target.value)}
+                            className="px-3 py-1.5 border border-[#C7C7C7] bg-[#E3E2DE] text-xs font-mono font-bold uppercase focus:outline-none focus:border-[#1351AA]"
+                          >
+                            <option value="VIEWER">VIEWER</option>
+                            <option value="EDITOR">EDITOR</option>
+                            <option value="ADMIN">ADMIN</option>
+                          </select>
+                        ) : (
+                          <span className="px-3 py-1 bg-[#141414] text-[#E3E2DE] text-xs font-mono font-bold uppercase">
+                            {m.role}
+                          </span>
+                        )}
+
+                        {isOwnerOrAdmin && !isOwner && (
+                          <button
+                            onClick={() => handleRemoveMember(u.id || u._id)}
+                            className="p-1.5 border border-[#C7C7C7] text-[#7A7A7A] hover:border-[#9e1c1c] hover:text-[#9e1c1c] transition-colors cursor-pointer"
+                            title="Remove member"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
-        </Card>
-      )}
 
-      {/* Tab 3: Audit Activity */}
-      {activeTab === 'AUDIT' && (
-        <Card className="p-6 bg-brand-white border-brand-charcoal/20 space-y-4">
-          <div className="border-b border-brand-charcoal/15 pb-3">
-            <h3 className="font-display text-xl uppercase tracking-wide text-brand-navy">
-              Workspace Audit Trail
-            </h3>
-            <p className="text-xs text-brand-taupe">
-              Immutable log of team membership changes, content creations, and security actions.
-            </p>
-          </div>
-
-          <div className="divide-y divide-brand-charcoal/10 text-xs">
-            {auditLogs.length === 0 ? (
-              <div className="p-8 text-center text-brand-taupe font-mono">
-                No recorded workspace events yet.
+          {/* Tab 2: Invite Teammates */}
+          {activeTab === 'INVITE' && (
+            <div className="space-y-6 max-w-xl">
+              <div className="space-y-1">
+                <h3 className="text-xl font-bold uppercase tracking-tight text-[#141414]">
+                  INVITE NEW TEAM MEMBER
+                </h3>
+                <p className="text-xs text-[#444343]">
+                  Generate a cryptographic SHA-256 single-use invitation link with specific role permissions.
+                </p>
               </div>
-            ) : (
-              auditLogs.map((log) => (
-                <div key={log.id || log._id} className="py-3 flex items-center justify-between">
-                  <div>
-                    <div className="font-bold text-brand-navy">{log.action?.replace(/_/g, ' ')}</div>
-                    <div className="font-mono text-[10px] text-brand-taupe">
-                      By {log.userId?.fullName || 'System'} • {log.resourceType}
-                    </div>
+
+              <form onSubmit={handleSendInvite} className="space-y-5">
+                <Input
+                  label="RECIPIENT EMAIL"
+                  type="email"
+                  required
+                  placeholder="colleague@company.com"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                />
+
+                <Select
+                  label="ASSIGN ROLE"
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value)}
+                  options={[
+                    { value: 'VIEWER', label: 'VIEWER — Can view content, transcripts & reports' },
+                    { value: 'EDITOR', label: 'EDITOR — Can upload content, edit & compile reports' },
+                    { value: 'ADMIN', label: 'ADMIN — Can manage team members & settings' }
+                  ]}
+                />
+
+                <PosterButton variant="primary" size="md" type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'GENERATING...' : 'CREATE SECURE INVITE LINK'}
+                </PosterButton>
+              </form>
+
+              {/* Generated Link Box */}
+              {generatedInvite && (
+                <div className="p-5 bg-[#E3E2DE] border border-[#141414] space-y-3">
+                  <span className="font-mono text-[10px] text-[#7A7A7A] uppercase font-bold block">
+                    SINGLE-USE INVITATION LINK (EXPIRES {new Date(generatedInvite.expiresAt).toLocaleDateString()})
+                  </span>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={generatedInvite.inviteUrl}
+                      className="flex-1 p-2.5 text-xs font-mono bg-white border border-[#C7C7C7] select-all"
+                    />
+                    <PosterButton variant="secondary" size="sm" onClick={handleCopyLink} icon={isCopied ? Check : Copy}>
+                      {isCopied ? 'COPIED' : 'COPY'}
+                    </PosterButton>
                   </div>
-                  <span className="font-mono text-[10px] text-brand-taupe">{formatDate(log.createdAt)}</span>
                 </div>
-              ))
-            )}
-          </div>
-        </Card>
-      )}
+              )}
+            </div>
+          )}
+
+          {/* Tab 3: Audit Activity */}
+          {activeTab === 'AUDIT' && (
+            <div className="space-y-6">
+              <div className="space-y-1">
+                <h3 className="text-xl font-bold uppercase tracking-tight text-[#141414]">
+                  WORKSPACE AUDIT TRAIL
+                </h3>
+                <p className="text-xs text-[#444343]">
+                  Immutable log of team membership changes, content creations, and security actions.
+                </p>
+              </div>
+
+              <div className="divide-y divide-[#C7C7C7] border-y border-[#C7C7C7] text-xs font-mono">
+                {auditLogs.length === 0 ? (
+                  <div className="p-8 text-center text-[#7A7A7A]">
+                    NO RECORDED WORKSPACE EVENTS YET.
+                  </div>
+                ) : (
+                  auditLogs.map((log, idx) => (
+                    <div key={log.id || log._id} className="py-4 flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <div className="font-bold text-[#141414] uppercase">{log.action?.replace(/_/g, ' ')}</div>
+                        <div className="text-[10px] text-[#7A7A7A]">
+                          BY {log.userId?.fullName || 'SYSTEM'} • {log.resourceType}
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-[#7A7A7A]">{formatDate(log.createdAt)}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
+
+export default WorkspaceSettingsPage;

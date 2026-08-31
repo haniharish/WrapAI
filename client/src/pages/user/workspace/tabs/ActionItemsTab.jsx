@@ -3,10 +3,9 @@ import { useParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { seekPlayback } from '../../../../store/slices/workspaceSlice.js';
 import { intelligenceService } from '../../../../services/intelligenceService.js';
-import { Card } from '../../../../components/ui/Card.jsx';
-import { Badge } from '../../../../components/ui/Badge.jsx';
 import { LoadingState } from '../../../../components/common/LoadingState.jsx';
-import { CheckSquare, Square, Play, Calendar, User, CheckCircle2 } from 'lucide-react';
+import { GridSidebarLabel } from '../../../../components/ui/GridSidebarLabel.jsx';
+import { CheckSquare, Square, Play, Calendar, User } from 'lucide-react';
 import { formatTimecode } from '../../../../utils/formatters.js';
 
 export function ActionItemsTab() {
@@ -32,7 +31,6 @@ export function ActionItemsTab() {
     const isCompleted = currentStatus === 'COMPLETED' || currentStatus === 'Completed';
     const nextStatus = isCompleted ? 'PENDING' : 'COMPLETED';
 
-    // Optimistic UI update
     setItems((prev) =>
       prev.map((item, idx) => {
         const targetId = item.id || item._id || idx;
@@ -47,85 +45,103 @@ export function ActionItemsTab() {
     }
   };
 
-  if (isLoading) return <LoadingState message="Extracting action items..." />;
+  if (isLoading) return <LoadingState message="EXTRACTING ACTION ITEMS..." />;
 
   if (!items || items.length === 0) {
     return (
-      <div className="p-8 text-center bg-brand-white border border-brand-charcoal/10 text-brand-charcoal">
-        <p className="text-sm">No action items assigned for this content.</p>
+      <div className="bg-white/70 border border-[#C7C7C7] p-12 text-center text-[#7A7A7A] font-mono text-xs">
+        NO ACTION ITEMS ASSIGNED IN THIS RECORDING.
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 max-w-5xl">
-      <div className="bg-brand-white border border-brand-charcoal/15 divide-y divide-brand-charcoal/10">
-        {items.map((act, idx) => {
-          const itemId = act.id || act._id || idx;
-          const owner = act.ownerName || act.owner || 'Unassigned';
-          const deadline = act.deadlineRaw || act.deadline || 'Next Sprint';
-          const status = (act.status || 'PENDING').toUpperCase();
-          const isDone = status === 'COMPLETED';
-          const timestamp = act.timestamp || 0;
+    <div className="space-y-12">
+      <div className="grid grid-cols-12 gap-8">
+        <GridSidebarLabel label="EXECUTION TASKS" index="01">
+          <p className="text-xs font-mono text-[#7A7A7A] uppercase leading-relaxed">
+            {items.length} ASSIGNED ACTIONS
+          </p>
+        </GridSidebarLabel>
 
-          return (
-            <div
-              key={itemId}
-              className={`p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors ${
-                isDone ? 'bg-brand-sage/10' : 'hover:bg-brand-sage/5'
-              }`}
-            >
-              <div className="flex items-start space-x-3">
-                <button
-                  onClick={() => toggleStatus(itemId, status)}
-                  className="mt-0.5 text-brand-navy hover:text-brand-charcoal focus:outline-none transition-colors"
-                  title="Toggle status"
+        <div className="col-span-12 lg:col-span-9 space-y-6">
+          <div className="divide-y divide-[#C7C7C7] border-y border-[#C7C7C7]">
+            {items.map((act, idx) => {
+              const itemId = act.id || act._id || idx;
+              const owner = act.ownerName || act.owner || 'UNASSIGNED';
+              const deadline = act.deadlineRaw || act.deadline || 'NEXT SPRINT';
+              const status = (act.status || 'PENDING').toUpperCase();
+              const isDone = status === 'COMPLETED';
+              const timestamp = act.timestamp || 0;
+
+              return (
+                <div
+                  key={itemId}
+                  className={`py-6 px-4 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors duration-200 ${
+                    isDone ? 'bg-[#1b6b36]/5' : 'bg-white/40 hover:bg-white/80'
+                  }`}
                 >
-                  {isDone ? (
-                    <CheckSquare className="w-5 h-5 text-emerald-700" />
-                  ) : (
-                    <Square className="w-5 h-5 text-brand-charcoal/40 hover:text-brand-navy" />
-                  )}
-                </button>
-                <div>
-                  <p className={`text-sm font-bold ${isDone ? 'line-through text-brand-taupe' : 'text-brand-navy'}`}>
-                    {act.task}
-                  </p>
-                  <div className="flex flex-wrap items-center gap-4 mt-2 text-xs font-mono text-brand-taupe">
-                    <span className="flex items-center text-brand-charcoal">
-                      <User className="w-3.5 h-3.5 mr-1 text-brand-taupe" /> Assigned to: <strong className="ml-1">{owner}</strong>
-                    </span>
-                    <span className="flex items-center text-brand-charcoal">
-                      <Calendar className="w-3.5 h-3.5 mr-1 text-brand-taupe" /> Due: <strong className="ml-1">{deadline}</strong>
-                    </span>
+                  <div className="flex items-start space-x-4">
+                    <button
+                      onClick={() => toggleStatus(itemId, status)}
+                      className="mt-0.5 text-[#141414] hover:text-[#1351AA] transition-colors cursor-pointer"
+                      title="Toggle status"
+                    >
+                      {isDone ? (
+                        <CheckSquare className="w-5 h-5 text-[#1b6b36]" />
+                      ) : (
+                        <Square className="w-5 h-5 text-[#7A7A7A] hover:text-[#141414]" />
+                      )}
+                    </button>
+                    <div className="space-y-1">
+                      <p className={`text-base font-bold uppercase tracking-tight ${isDone ? 'line-through text-[#7A7A7A]' : 'text-[#141414]'}`}>
+                        {act.task}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-[#7A7A7A]">
+                        <span className="flex items-center text-[#141414]">
+                          <User className="w-3.5 h-3.5 mr-1 text-[#7A7A7A]" /> OWNER: <strong className="ml-1 uppercase">{owner}</strong>
+                        </span>
+                        <span className="flex items-center text-[#141414]">
+                          <Calendar className="w-3.5 h-3.5 mr-1 text-[#7A7A7A]" /> DUE: <strong className="ml-1 uppercase">{deadline}</strong>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3 self-end md:self-center">
+                    <button
+                      onClick={() => toggleStatus(itemId, status)}
+                      className="cursor-pointer"
+                      title="Click to toggle status"
+                    >
+                      <span className={`px-2.5 py-1 text-[10px] font-mono font-bold uppercase ${
+                        isDone
+                          ? 'bg-[#1b6b36] text-[#E3E2DE]'
+                          : status === 'IN_PROGRESS'
+                          ? 'bg-[#1351AA] text-[#E3E2DE]'
+                          : 'bg-[#E3E2DE] text-[#141414] border border-[#C7C7C7]'
+                      }`}>
+                        {isDone ? 'COMPLETED' : status === 'IN_PROGRESS' ? 'IN PROGRESS' : 'OPEN'}
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => dispatch(seekPlayback(timestamp))}
+                      className="inline-flex items-center text-xs font-mono font-bold text-[#141414] hover:text-[#1351AA] bg-[#E3E2DE] hover:bg-white border border-[#C7C7C7] px-2.5 py-1 transition-colors cursor-pointer"
+                      title="Jump to task in media player"
+                    >
+                      <Play className="w-2.5 h-2.5 mr-1.5 text-[#1351AA]" />
+                      {formatTimecode(timestamp)}
+                    </button>
                   </div>
                 </div>
-              </div>
-
-              <div className="flex items-center space-x-3 self-end md:self-center">
-                <button
-                  onClick={() => toggleStatus(itemId, status)}
-                  className="cursor-pointer"
-                  title="Click to toggle status"
-                >
-                  <Badge variant={isDone ? 'success' : status === 'IN_PROGRESS' ? 'cyan' : 'warning'}>
-                    {isDone ? 'COMPLETED' : status === 'IN_PROGRESS' ? 'IN PROGRESS' : 'OPEN'}
-                  </Badge>
-                </button>
-
-                <button
-                  onClick={() => dispatch(seekPlayback(timestamp))}
-                  className="inline-flex items-center text-xs font-mono font-bold text-brand-navy hover:text-brand-charcoal bg-brand-sage/40 hover:bg-brand-sage px-2.5 py-1 transition-colors"
-                  title="Jump to this task in audio/video"
-                >
-                  <Play className="w-3 h-3 mr-1" />
-                  {formatTimecode(timestamp)}
-                </button>
-              </div>
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
+
+export default ActionItemsTab;

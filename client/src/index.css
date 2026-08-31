@@ -3,40 +3,77 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply bg-brand-light text-brand-navy font-sans antialiased overflow-x-hidden;
+  * {
+    border-color: #C7C7C7;
+    border-radius: 0px !important;
+    box-shadow: none !important;
   }
 
-  h1, h2, h3, h4, .font-display {
-    letter-spacing: 0.02em;
+  body {
+    background-color: #E3E2DE;
+    color: #141414;
+    font-family: 'General Sans', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    line-height: 1.5;
+  }
+
+  /* Editorial Headings */
+  h1, h2, h3, h4, h5, h6, .font-display {
+    font-family: 'General Sans', 'Plus Jakarta Sans', system-ui, sans-serif;
+    text-transform: uppercase;
+    font-weight: 800;
+    line-height: 0.9;
+    letter-spacing: -0.03em;
+    color: #141414;
+  }
+
+  /* Technical Mono Numbers & Timestamps */
+  .font-mono {
+    font-family: 'JetBrains Mono', Menlo, Monaco, Consolas, monospace;
   }
 }
 
-/* Custom minimal scrollbar */
+/* Linear 0.3s mechanical transitions on all interactive elements */
+a, button, input, select, textarea {
+  transition: all 0.3s linear;
+}
+
+/* Custom technical minimal scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #fafafa;
+  background: #E3E2DE;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #b7c6c2;
-  border-radius: 2px;
+  background: #C7C7C7;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #302b2f;
+  background: #141414;
 }
 
-/* Crosshair precision cursor for editorial sections */
-.cursor-cross {
-  cursor: crosshair;
+/* Structural 1px border */
+.border-poster {
+  border: 1px solid #C7C7C7;
 }
 
-/* Custom border styling */
-.border-fine {
-  border-width: 1px;
+/* Hero & Section Fluid Typographic clamp utilities */
+.text-poster-hero {
+  font-size: clamp(3.5rem, 9vw, 9.5rem);
+  line-height: 0.85;
+  letter-spacing: -0.04em;
+  font-weight: 900;
+}
+
+.text-poster-section {
+  font-size: clamp(2.2rem, 5vw, 5rem);
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+  font-weight: 800;
 }

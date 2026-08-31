@@ -5,7 +5,7 @@ import { logger } from '../utils/logger.js';
 let isConnected = false;
 
 export async function connectDatabase(customUri = null) {
-  const uri = customUri || config.mongoUri;
+  const uri = customUri || config.mongoUri || config.database?.uri || process.env.MONGODB_URI;
 
   if (isConnected && mongoose.connection.readyState === 1) {
     return mongoose.connection;

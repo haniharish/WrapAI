@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { reportService } from '../../services/reportService.js';
-import { Card } from '../../components/ui/Card.jsx';
-import { Button } from '../../components/ui/Button.jsx';
-import { Badge } from '../../components/ui/Badge.jsx';
+import { PosterButton } from '../../components/ui/PosterButton.jsx';
 import { LoadingState } from '../../components/common/LoadingState.jsx';
-import { FileCheck, Sparkles, AlertCircle, Check, Users, ShieldCheck } from 'lucide-react';
+import { ShieldCheck, AlertCircle, Check, Users } from 'lucide-react';
 import { formatDate } from '../../utils/formatters.js';
 
 export function SharedReportPage() {
@@ -28,16 +26,16 @@ export function SharedReportPage() {
     load();
   }, [token]);
 
-  if (isLoading) return <LoadingState message="Loading shared intelligence report..." />;
+  if (isLoading) return <LoadingState message="LOADING SHARED REPORT..." />;
 
   if (error || !report) {
     return (
-      <div className="max-w-xl mx-auto py-16 text-center space-y-4">
-        <AlertCircle className="w-12 h-12 text-rose-500 mx-auto" />
-        <h2 className="font-display text-2xl uppercase text-brand-navy">Report Link Unavailable</h2>
-        <p className="text-xs text-brand-taupe">{error}</p>
+      <div className="max-w-xl mx-auto py-20 px-6 text-center space-y-6">
+        <AlertCircle className="w-12 h-12 text-[#9e1c1c] mx-auto" />
+        <h2 className="text-3xl font-black uppercase tracking-tight text-[#141414]">REPORT LINK UNAVAILABLE</h2>
+        <p className="text-sm text-[#444343]">{error}</p>
         <Link to="/">
-          <Button variant="outline" size="sm">Go to WrapAI Home</Button>
+          <PosterButton variant="primary" size="md">GO TO WRAPAI HOME</PosterButton>
         </Link>
       </div>
     );
@@ -46,85 +44,85 @@ export function SharedReportPage() {
   const structured = report.structuredData;
 
   return (
-    <div className="max-w-4xl mx-auto py-8 px-4 space-y-8">
+    <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 space-y-8">
       {/* Public Read-Only Banner */}
-      <div className="flex items-center justify-between p-3 bg-brand-navy text-brand-white text-xs font-mono">
-        <div className="flex items-center space-x-2">
-          <ShieldCheck className="w-4 h-4 text-brand-cyan" />
+      <div className="flex items-center justify-between p-4 bg-[#141414] text-[#E3E2DE] text-xs font-mono">
+        <div className="flex items-center space-x-2.5">
+          <ShieldCheck className="w-4 h-4 text-[#1351AA]" />
           <span>VERIFIED READ-ONLY WRAPAI INTELLIGENCE REPORT</span>
         </div>
-        <Link to="/register" className="text-brand-cyan hover:underline text-[11px]">
-          Try WrapAI Free →
+        <Link to="/register" className="text-[#1351AA] hover:underline font-bold uppercase">
+          TRY WRAPAI FREE →
         </Link>
       </div>
 
       {/* Report Canvas */}
-      <div className="bg-brand-white border border-brand-charcoal/20 p-8 sm:p-12 shadow-xl font-sans text-brand-navy space-y-8">
-        <div className="border-b-2 border-brand-navy pb-6">
-          <span className="text-[10px] font-mono font-bold tracking-widest text-brand-taupe uppercase">
+      <div className="bg-white border border-[#C7C7C7] p-8 sm:p-14 font-sans text-[#141414] space-y-10">
+        <div className="border-b-2 border-[#141414] pb-8 space-y-4">
+          <span className="text-xs font-mono font-bold tracking-[0.2em] text-[#7A7A7A] uppercase block">
             WRAPAI INTELLIGENCE SUITE • {report.template} REPORT
           </span>
-          <h1 className="font-display text-3xl sm:text-4xl uppercase tracking-wider text-brand-navy mt-1">
+          <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-[#141414]">
             {report.title}
           </h1>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 p-3 bg-brand-light border border-brand-charcoal/15 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-[#C7C7C7] text-xs font-mono">
             <div>
-              <span className="font-mono text-[10px] uppercase text-brand-taupe block">SOURCE</span>
-              <span className="font-semibold text-brand-charcoal">{report.contentTitle || 'Recording'}</span>
+              <span className="text-[10px] uppercase text-[#7A7A7A] block font-bold">SOURCE</span>
+              <span className="font-bold text-[#141414]">{report.contentTitle || 'RECORDING'}</span>
             </div>
             <div>
-              <span className="font-mono text-[10px] uppercase text-brand-taupe block">DATE</span>
-              <span className="font-semibold text-brand-charcoal">{formatDate(report.generatedAt)}</span>
+              <span className="text-[10px] uppercase text-[#7A7A7A] block font-bold">DATE</span>
+              <span className="text-[#141414]">{formatDate(report.generatedAt)}</span>
             </div>
             <div>
-              <span className="font-mono text-[10px] uppercase text-brand-taupe block">FORMAT</span>
-              <span className="font-semibold text-brand-charcoal">{report.format} (v{report.version})</span>
+              <span className="text-[10px] uppercase text-[#7A7A7A] block font-bold">FORMAT</span>
+              <span className="text-[#141414]">{report.format} (v{report.version})</span>
             </div>
             <div>
-              <span className="font-mono text-[10px] uppercase text-brand-taupe block">DETAIL</span>
-              <span className="font-semibold text-brand-charcoal">{report.detailLevel}</span>
+              <span className="text-[10px] uppercase text-[#7A7A7A] block font-bold">DETAIL</span>
+              <span className="text-[#141414]">{report.detailLevel}</span>
             </div>
           </div>
         </div>
 
         {/* Dynamic Sections */}
         {(structured?.sections || []).map((sec) => (
-          <div key={sec.id} className="space-y-3">
-            <h3 className="font-display text-xl uppercase tracking-wide text-brand-navy border-b border-brand-charcoal/15 pb-1">
+          <div key={sec.id} className="space-y-4">
+            <h3 className="text-lg sm:text-xl font-black uppercase tracking-tight text-[#141414] border-b border-[#C7C7C7] pb-2">
               {sec.title}
             </h3>
 
             {sec.type === 'paragraph' && (
-              <p className="text-xs text-brand-charcoal leading-relaxed whitespace-pre-line bg-brand-light/40 p-4 border border-brand-charcoal/10">
+              <p className="text-sm text-[#444343] leading-relaxed whitespace-pre-line bg-[#E3E2DE]/30 p-5 border border-[#C7C7C7]">
                 {sec.content}
               </p>
             )}
 
             {sec.type === 'topics' && (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {sec.items?.map((t, idx) => (
-                  <div key={idx} className="text-xs p-3 bg-brand-light/30 border border-brand-charcoal/10">
-                    <div className="flex items-center justify-between font-semibold text-brand-navy">
-                      <span>• {t.title}</span>
-                      {t.timecode && <span className="font-mono text-[10px] text-brand-taupe">[{t.timecode}]</span>}
+                  <div key={idx} className="text-sm p-4 bg-[#E3E2DE]/30 border border-[#C7C7C7] space-y-1">
+                    <div className="flex items-center justify-between font-bold text-[#141414]">
+                      <span>0{idx + 1}. {t.title}</span>
+                      {t.timecode && <span className="font-mono text-xs text-[#1351AA]">[{t.timecode}]</span>}
                     </div>
-                    {t.summary && <p className="text-[11px] text-brand-charcoal mt-1 leading-normal">{t.summary}</p>}
+                    {t.summary && <p className="text-xs text-[#444343] leading-relaxed">{t.summary}</p>}
                   </div>
                 ))}
               </div>
             )}
 
             {sec.type === 'decisions' && (
-              <ul className="space-y-2 text-xs">
+              <ul className="space-y-3 text-sm">
                 {sec.items?.map((d, idx) => (
-                  <li key={idx} className="p-3 bg-emerald-50/50 border border-emerald-200 text-brand-charcoal flex items-start space-x-2">
-                    <Check className="w-4 h-4 text-emerald-700 flex-shrink-0 mt-0.5" />
+                  <li key={idx} className="p-4 bg-[#1b6b36]/5 border border-[#1b6b36] text-[#141414] flex items-start space-x-3">
+                    <Check className="w-4 h-4 text-[#1b6b36] flex-shrink-0 mt-0.5" />
                     <div>
-                      <strong className="text-emerald-950">{d.title}</strong>
-                      {d.timecode && <span className="font-mono text-[10px] text-brand-taupe ml-2">({d.timecode})</span>}
+                      <strong className="font-bold uppercase text-[#141414]">{d.title}</strong>
+                      {d.timecode && <span className="font-mono text-xs text-[#7A7A7A] ml-2">({d.timecode})</span>}
                       {d.description && d.description !== d.title && (
-                        <p className="text-[11px] text-emerald-900/80 mt-0.5">{d.description}</p>
+                        <p className="text-xs text-[#444343] mt-1">{d.description}</p>
                       )}
                     </div>
                   </li>
@@ -133,22 +131,22 @@ export function SharedReportPage() {
             )}
 
             {sec.type === 'action_items' && (
-              <table className="w-full text-xs text-left border border-brand-charcoal/20">
-                <thead className="bg-brand-light border-b border-brand-charcoal/20 uppercase font-mono text-[10px]">
+              <table className="w-full text-xs text-left border border-[#C7C7C7]">
+                <thead className="bg-[#E3E2DE] border-b border-[#C7C7C7] uppercase font-mono text-[10px] text-[#141414]">
                   <tr>
-                    <th className="p-2.5">Task</th>
-                    <th className="p-2.5">Owner</th>
-                    <th className="p-2.5">Deadline</th>
-                    <th className="p-2.5">Status</th>
+                    <th className="p-3">TASK</th>
+                    <th className="p-3">OWNER</th>
+                    <th className="p-3">DEADLINE</th>
+                    <th className="p-3">STATUS</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-brand-charcoal/10">
+                <tbody className="divide-y divide-[#C7C7C7]">
                   {sec.items?.map((a, idx) => (
                     <tr key={idx}>
-                      <td className="p-2.5 font-bold text-brand-navy">{a.task}</td>
-                      <td className="p-2.5 font-mono text-brand-charcoal">{a.owner}</td>
-                      <td className="p-2.5 font-mono text-brand-charcoal">{a.deadline}</td>
-                      <td className="p-2.5 font-mono text-brand-taupe">{a.status}</td>
+                      <td className="p-3 font-bold text-[#141414]">{a.task}</td>
+                      <td className="p-3 font-mono text-[#444343]">{a.owner}</td>
+                      <td className="p-3 font-mono text-[#444343]">{a.deadline}</td>
+                      <td className="p-3 font-mono text-[#7A7A7A] uppercase">{a.status}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -156,22 +154,23 @@ export function SharedReportPage() {
             )}
 
             {sec.type === 'key_points' && (
-              <ul className="list-disc pl-5 space-y-1 text-xs text-brand-charcoal">
+              <ul className="space-y-2 text-xs text-[#444343]">
                 {sec.items?.map((kp, idx) => (
-                  <li key={idx}>
-                    {kp.text} {kp.timecode && <span className="font-mono text-[10px] text-brand-taupe">({kp.timecode})</span>}
+                  <li key={idx} className="flex items-start space-x-2">
+                    <span className="font-mono text-[#1351AA] font-bold">•</span>
+                    <span>{kp.text} {kp.timecode && <span className="font-mono text-[10px] text-[#7A7A7A]">({kp.timecode})</span>}</span>
                   </li>
                 ))}
               </ul>
             )}
 
             {sec.type === 'highlights' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {sec.items?.map((hl, idx) => (
-                  <div key={idx} className="p-2.5 bg-cyan-50/50 border border-cyan-200 text-xs">
-                    <span className="font-bold text-cyan-950">★ {hl.title}</span>
-                    {hl.timecode && <span className="font-mono text-[10px] text-brand-taupe ml-1">[{hl.timecode}]</span>}
-                    {hl.description && <p className="text-[11px] text-cyan-900 mt-1">{hl.description}</p>}
+                  <div key={idx} className="p-3 bg-[#1351AA]/5 border border-[#1351AA] text-xs space-y-1">
+                    <span className="font-bold text-[#1351AA] uppercase">★ {hl.title}</span>
+                    {hl.timecode && <span className="font-mono text-[10px] text-[#7A7A7A] ml-2">[{hl.timecode}]</span>}
+                    {hl.description && <p className="text-[#444343]">{hl.description}</p>}
                   </div>
                 ))}
               </div>
@@ -180,10 +179,10 @@ export function SharedReportPage() {
             {sec.type === 'participants' && (
               <div className="flex flex-wrap gap-2">
                 {sec.items?.map((spk, idx) => (
-                  <span key={idx} className="px-3 py-1.5 bg-brand-light border border-brand-charcoal/15 text-xs text-brand-charcoal flex items-center space-x-1">
-                    <Users className="w-3.5 h-3.5 text-brand-taupe" />
-                    <strong>{spk.name}</strong>
-                    <span className="text-brand-taupe font-mono text-[10px]">({spk.speakingTimeFormatted})</span>
+                  <span key={idx} className="px-3 py-1.5 bg-[#E3E2DE] border border-[#C7C7C7] text-xs font-mono text-[#141414] flex items-center space-x-2">
+                    <Users className="w-3.5 h-3.5 text-[#7A7A7A]" />
+                    <strong className="uppercase">{spk.name}</strong>
+                    <span className="text-[#7A7A7A]">({spk.speakingTimeFormatted})</span>
                   </span>
                 ))}
               </div>
@@ -191,12 +190,14 @@ export function SharedReportPage() {
           </div>
         ))}
 
-        <div className="border-t border-brand-charcoal/15 pt-6 text-center text-[10px] font-mono text-brand-taupe flex items-center justify-between">
-          <span>WrapAI Intelligence Platform</span>
-          <span>From Content to Clarity</span>
-          <span>Shared View</span>
+        <div className="border-t border-[#C7C7C7] pt-8 text-center text-xs font-mono text-[#7A7A7A] flex items-center justify-between">
+          <span>WRAPAI INTELLIGENCE PLATFORM</span>
+          <span>FROM CONTENT TO CLARITY</span>
+          <span>PUBLIC VIEW</span>
         </div>
       </div>
     </div>
   );
 }
+
+export default SharedReportPage;

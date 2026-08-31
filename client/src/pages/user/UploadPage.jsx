@@ -2,11 +2,11 @@ import React, { useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { contentService } from '../../services/contentService.js';
-import { Button } from '../../components/ui/Button.jsx';
-import { Card } from '../../components/ui/Card.jsx';
+import { PosterButton } from '../../components/ui/PosterButton.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import { Tabs } from '../../components/ui/Tabs.jsx';
 import { ProgressBar } from '../../components/ui/ProgressBar.jsx';
+import { GridSidebarLabel } from '../../components/ui/GridSidebarLabel.jsx';
 import {
   UploadCloud,
   Mic,
@@ -15,10 +15,8 @@ import {
   Link2,
   File,
   X,
-  Sparkles,
   AlertCircle,
-  CheckCircle2,
-  Ban
+  CheckCircle2
 } from 'lucide-react';
 import { formatBytes } from '../../utils/formatters.js';
 
@@ -44,14 +42,14 @@ export function UploadPage() {
   const [successMessage, setSuccessMessage] = useState('');
 
   const abortControllerRef = useRef(null);
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm();
+  const { register, handleSubmit } = useForm();
 
   const tabs = [
-    { id: 'AUDIO', label: 'Audio', icon: Mic },
-    { id: 'VIDEO', label: 'Video', icon: Video },
-    { id: 'DOCUMENT', label: 'Document', icon: FileText },
-    { id: 'LINK', label: 'URL Link', icon: Link2 },
-    { id: 'TEXT', label: 'Raw Text', icon: File }
+    { id: 'AUDIO', label: 'AUDIO', icon: Mic },
+    { id: 'VIDEO', label: 'VIDEO', icon: Video },
+    { id: 'DOCUMENT', label: 'DOCUMENT', icon: FileText },
+    { id: 'LINK', label: 'URL LINK', icon: Link2 },
+    { id: 'TEXT', label: 'RAW TEXT', icon: File }
   ];
 
   const validateSelectedFile = (file, tab) => {
@@ -152,7 +150,6 @@ export function UploadPage() {
       setUploadProgress(100);
       setSuccessMessage('Content successfully ingested into WrapAI repository! Initializing processing...');
       
-      // Navigate to processing status page
       setTimeout(() => {
         if (res && res.data && res.data.id) {
           navigate(`/processing/${res.data.id}`);
@@ -172,177 +169,188 @@ export function UploadPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <div className="pb-4 border-b border-brand-charcoal/15">
-        <span className="text-xs font-mono font-bold uppercase tracking-widest text-brand-taupe">CONTENT INGESTION</span>
-        <h1 className="font-display text-4xl uppercase tracking-tight text-brand-navy mt-1">
-          Upload & Ingest Content
-        </h1>
-        <p className="text-xs text-brand-taupe mt-1">
-          Supported formats: Audio (MP3, WAV, M4A, AAC), Video (MP4, MOV, WebM), Documents (TXT, PDF, DOCX), or Remote URLs.
-        </p>
+    <div className="space-y-12">
+      {/* 1. Header */}
+      <div className="border-b border-[#C7C7C7] pb-8">
+        <div className="space-y-2">
+          <span className="font-mono text-xs font-bold text-[#1351AA] uppercase tracking-[0.2em] block">
+            CONTENT INGESTION
+          </span>
+          <h1 className="text-poster-section text-[#141414]">
+            UPLOAD & <br />
+            <span className="text-[#1351AA]">INGEST.</span>
+          </h1>
+          <p className="text-xs font-mono text-[#7A7A7A] uppercase">
+            MULTI-MODAL AUDIO, VIDEO, DOCUMENTS & STREAMING URLS
+          </p>
+        </div>
       </div>
 
       {errorMessage && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-xs flex items-center space-x-2">
+        <div className="p-4 bg-[#9e1c1c]/10 border border-[#9e1c1c] text-[#9e1c1c] text-xs font-mono flex items-center space-x-3">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           <span>{errorMessage}</span>
         </div>
       )}
 
       {successMessage && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center space-x-2">
+        <div className="p-4 bg-[#1b6b36]/10 border border-[#1b6b36] text-[#1b6b36] text-xs font-mono flex items-center space-x-3">
           <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
           <span>{successMessage}</span>
         </div>
       )}
 
-      <Card className="p-8">
-        <Tabs
-          tabs={tabs}
-          activeTab={activeTab}
-          onChange={(tab) => {
-            setActiveTab(tab);
-            setSelectedFile(null);
-            setErrorMessage('');
-          }}
-          className="mb-8"
-        />
+      {/* 2. Ingest Canvas */}
+      <div className="grid grid-cols-12 gap-8">
+        <GridSidebarLabel label="FORMAT MATRIX" index="01">
+          <p className="text-xs font-mono text-[#7A7A7A] uppercase leading-relaxed">
+            S3 OBJECT STORAGE STREAM
+          </p>
+        </GridSidebarLabel>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* File Upload Zone for AUDIO, VIDEO, DOCUMENT */}
-          {['AUDIO', 'VIDEO', 'DOCUMENT'].includes(activeTab) && (
-            <div>
-              {!selectedFile ? (
-                <div
-                  onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
-                  onDragLeave={() => setDragActive(false)}
-                  onDrop={handleDrop}
-                  className={`border-2 border-dashed p-12 text-center transition-all ${
-                    dragActive ? 'border-brand-navy bg-brand-sage/20' : 'border-brand-charcoal/20 bg-brand-light/40'
-                  }`}
-                >
-                  <UploadCloud className="w-12 h-12 text-brand-navy mx-auto mb-4 opacity-70" />
-                  <p className="font-display text-xl uppercase text-brand-navy mb-1">
-                    Drag and drop your {activeTab.toLowerCase()} file here
-                  </p>
-                  <p className="text-xs text-brand-taupe mb-4">
-                    Maximum file size: {LIMITS[activeTab]?.label} (Direct S3 Object Storage)
-                  </p>
-                  <label className="cursor-pointer">
-                    <span className="inline-flex items-center px-4 py-2 bg-brand-navy text-brand-white text-xs font-bold uppercase tracking-wider hover:bg-brand-charcoal">
-                      Browse Local Files
-                    </span>
-                    <input
-                      type="file"
-                      className="hidden"
-                      onChange={handleFileChange}
-                      accept={LIMITS[activeTab]?.accept}
-                    />
-                  </label>
-                </div>
-              ) : (
-                /* Selected File Preview */
-                <div className="p-4 bg-brand-light border border-brand-navy flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <File className="w-6 h-6 text-brand-navy flex-shrink-0" />
-                    <div>
-                      <p className="text-xs font-bold text-brand-navy">{selectedFile.name}</p>
-                      <p className="text-[10px] font-mono text-brand-taupe">
-                        {formatBytes(selectedFile.size)} | {selectedFile.type || 'Unknown MIME'}
-                      </p>
-                    </div>
+        <div className="col-span-12 lg:col-span-9 bg-white/70 border border-[#C7C7C7] p-6 sm:p-10 space-y-8">
+          <Tabs
+            tabs={tabs}
+            activeTab={activeTab}
+            onChange={(tab) => {
+              setActiveTab(tab);
+              setSelectedFile(null);
+              setErrorMessage('');
+            }}
+          />
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            {/* File Upload Zone for AUDIO, VIDEO, DOCUMENT */}
+            {['AUDIO', 'VIDEO', 'DOCUMENT'].includes(activeTab) && (
+              <div>
+                {!selectedFile ? (
+                  <div
+                    onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+                    onDragLeave={() => setDragActive(false)}
+                    onDrop={handleDrop}
+                    className={`border-2 border-dashed p-10 sm:p-14 text-center transition-colors duration-300 ${
+                      dragActive ? 'border-[#1351AA] bg-[#1351AA]/5' : 'border-[#C7C7C7] bg-[#E3E2DE]/40'
+                    }`}
+                  >
+                    <UploadCloud className="w-12 h-12 text-[#141414] mx-auto mb-4" />
+                    <p className="text-lg sm:text-xl font-bold uppercase tracking-tight text-[#141414] mb-1">
+                      DRAG AND DROP YOUR {activeTab} FILE HERE
+                    </p>
+                    <p className="text-xs font-mono text-[#7A7A7A] mb-6">
+                      MAXIMUM SIZE: {LIMITS[activeTab]?.label}
+                    </p>
+                    <label className="cursor-pointer">
+                      <span className="inline-flex items-center px-6 py-3 bg-[#141414] text-[#E3E2DE] text-xs font-bold uppercase tracking-wider hover:bg-[#1351AA] transition-colors">
+                        BROWSE LOCAL FILES
+                      </span>
+                      <input
+                        type="file"
+                        className="hidden"
+                        onChange={handleFileChange}
+                        accept={LIMITS[activeTab]?.accept}
+                      />
+                    </label>
                   </div>
-                  {!isUploading && (
-                    <button
-                      type="button"
-                      onClick={() => setSelectedFile(null)}
-                      className="p-1 text-brand-taupe hover:text-red-600"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  )}
+                ) : (
+                  /* Selected File Preview */
+                  <div className="p-5 bg-white border border-[#141414] flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <File className="w-6 h-6 text-[#1351AA] flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-bold uppercase text-[#141414]">{selectedFile.name}</p>
+                        <p className="text-xs font-mono text-[#7A7A7A]">
+                          {formatBytes(selectedFile.size)} | {selectedFile.type || 'RAW STREAM'}
+                        </p>
+                      </div>
+                    </div>
+                    {!isUploading && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedFile(null)}
+                        className="p-1 text-[#7A7A7A] hover:text-[#9e1c1c] transition-colors cursor-pointer"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* URL Input */}
+            {activeTab === 'LINK' && (
+              <Input
+                label="REMOTE MULTIMEDIA URL"
+                placeholder="https://example.com/audio/meeting.mp3 or video link"
+                {...register('url')}
+              />
+            )}
+
+            {/* Raw Text Input */}
+            {activeTab === 'TEXT' && (
+              <div className="space-y-2">
+                <label className="block text-xs font-bold uppercase tracking-[0.15em] text-[#7A7A7A]">
+                  RAW TEXT CONTENT (MAX 100,000 CHARACTERS)
+                </label>
+                <textarea
+                  rows={8}
+                  placeholder="Paste verbatim discussion, meeting transcript, or unstructured notes..."
+                  className="w-full bg-[#E3E2DE] sm:bg-white border border-[#C7C7C7] p-4 text-sm text-[#141414] focus:outline-none focus:border-[#1351AA] font-mono leading-relaxed"
+                  {...register('rawText')}
+                />
+              </div>
+            )}
+
+            {/* Upload Progress Bar */}
+            {isUploading && (
+              <div className="space-y-3 p-5 bg-[#E3E2DE]/50 border border-[#C7C7C7]">
+                <div className="flex justify-between items-center text-xs font-mono font-bold text-[#141414] uppercase">
+                  <span>UPLOADING & STORING ASSET...</span>
+                  <span>{uploadProgress}%</span>
                 </div>
-              )}
-            </div>
-          )}
+                <ProgressBar progress={uploadProgress} />
+                <div className="flex justify-end pt-2">
+                  <PosterButton
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCancelUpload}
+                  >
+                    CANCEL UPLOAD
+                  </PosterButton>
+                </div>
+              </div>
+            )}
 
-          {/* URL Input */}
-          {activeTab === 'LINK' && (
-            <Input
-              label="Remote Multimedia URL"
-              icon={Link2}
-              placeholder="https://example.com/audio/meeting.mp3 or video link"
-              {...register('url')}
-            />
-          )}
-
-          {/* Raw Text Input */}
-          {activeTab === 'TEXT' && (
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-brand-charcoal mb-1.5">
-                Paste Raw Text / Transcript (Max 100,000 chars)
-              </label>
-              <textarea
-                rows={7}
-                placeholder="Paste verbatim discussion, meeting transcript, or unstructured notes..."
-                className="w-full bg-brand-white border border-brand-charcoal/20 p-4 text-sm text-brand-navy focus:outline-none focus:border-brand-navy font-mono"
-                {...register('rawText')}
+            {/* Common Metadata Fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-4 border-t border-[#C7C7C7]">
+              <Input
+                label="CONTENT TITLE (OPTIONAL)"
+                placeholder="e.g. Q3 Engineering Architecture Sync"
+                {...register('title')}
+              />
+              <Input
+                label="TAGS (COMMA SEPARATED)"
+                placeholder="Engineering, Architecture, Review"
+                {...register('tags')}
               />
             </div>
-          )}
 
-          {/* Upload Progress Bar */}
-          {isUploading && (
-            <div className="space-y-2 p-4 bg-brand-light border border-brand-charcoal/15">
-              <div className="flex justify-between items-center text-xs font-mono font-bold text-brand-navy">
-                <span>Uploading & Storing Media...</span>
-                <span>{uploadProgress}%</span>
-              </div>
-              <ProgressBar progress={uploadProgress} />
-              <div className="flex justify-end pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  icon={Ban}
-                  onClick={handleCancelUpload}
-                  className="text-red-600 border-red-300 hover:bg-red-50"
-                >
-                  Cancel Upload
-                </Button>
-              </div>
+            <div className="pt-4 flex justify-end">
+              <PosterButton
+                type="submit"
+                variant="primary"
+                size="lg"
+                disabled={isUploading || (!selectedFile && activeTab !== 'LINK' && activeTab !== 'TEXT')}
+              >
+                {isUploading ? 'INGESTING...' : 'START PROCESSING PIPELINE'}
+              </PosterButton>
             </div>
-          )}
-
-          {/* Common Metadata Fields */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-brand-charcoal/10">
-            <Input
-              label="Content Title (Optional)"
-              placeholder="e.g. Q3 Engineering Sync"
-              {...register('title')}
-            />
-            <Input
-              label="Tags (Comma separated)"
-              placeholder="Engineering, Storage, Review"
-              {...register('tags')}
-            />
-          </div>
-
-          <div className="pt-4 flex justify-end">
-            <Button
-              type="submit"
-              variant="primary"
-              size="lg"
-              icon={Sparkles}
-              isLoading={isUploading}
-              disabled={isUploading || (!selectedFile && activeTab !== 'LINK' && activeTab !== 'TEXT')}
-            >
-              {isUploading ? 'Ingesting...' : 'Ingest Content'}
-            </Button>
-          </div>
-        </form>
-      </Card>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }
+
+export default UploadPage;

@@ -1,48 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useOutletContext } from 'react-router-dom';
 import { reportService } from '../../../../services/reportService.js';
-import { intelligenceService } from '../../../../services/intelligenceService.js';
-import { Card } from '../../../../components/ui/Card.jsx';
-import { Button } from '../../../../components/ui/Button.jsx';
-import { Badge } from '../../../../components/ui/Badge.jsx';
+import { PosterButton } from '../../../../components/ui/PosterButton.jsx';
 import { LoadingState } from '../../../../components/common/LoadingState.jsx';
 import {
   Download,
-  RefreshCw,
-  FileCheck,
   Share2,
   Sliders,
-  CheckSquare,
-  FileText,
-  Copy,
-  ExternalLink,
-  Check,
-  Clock,
-  Users,
-  Award,
-  ListOrdered,
   Sparkles,
+  Check,
+  Users,
   AlertCircle
 } from 'lucide-react';
 import { formatDate } from '../../../../utils/formatters.js';
 
 const TEMPLATES = [
-  { id: 'MEETING', name: 'Meeting Minutes', desc: 'Summary, decisions, action items, attendance' },
-  { id: 'EXECUTIVE', name: 'Executive Brief', desc: 'High-level strategic digest & critical outcomes' },
-  { id: 'LECTURE', name: 'Lecture Notes', desc: 'Study notes, core concepts, review questions' },
-  { id: 'INTERVIEW', name: 'Interview Summary', desc: 'Candidate competencies, responses, highlights' },
-  { id: 'GENERAL', name: 'General Report', desc: 'Standard content analysis & takeaways' }
+  { id: 'MEETING', name: 'MEETING MINUTES', desc: 'Summary, decisions, action items, attendance' },
+  { id: 'EXECUTIVE', name: 'EXECUTIVE BRIEF', desc: 'High-level strategic digest & critical outcomes' },
+  { id: 'LECTURE', name: 'LECTURE NOTES', desc: 'Study notes, core concepts, review questions' },
+  { id: 'INTERVIEW', name: 'INTERVIEW SUMMARY', desc: 'Candidate competencies, responses, highlights' },
+  { id: 'GENERAL', name: 'GENERAL REPORT', desc: 'Standard content analysis & takeaways' }
 ];
 
 const SECTIONS_LIST = [
-  { id: 'SUMMARY', label: 'Executive Summary' },
-  { id: 'TOPICS', label: 'Topics Discussed' },
-  { id: 'DECISIONS', label: 'Agreed Decisions' },
-  { id: 'ACTION_ITEMS', label: 'Action Item Registry' },
-  { id: 'KEY_POINTS', label: 'Key Points & Takeaways' },
-  { id: 'QUESTIONS', label: 'Questions Raised' },
-  { id: 'HIGHLIGHTS', label: 'Key Highlights' },
-  { id: 'PARTICIPANTS', label: 'Participants & Speakers' }
+  { id: 'SUMMARY', label: 'EXECUTIVE SUMMARY' },
+  { id: 'TOPICS', label: 'TOPICS DISCUSSED' },
+  { id: 'DECISIONS', label: 'AGREED DECISIONS' },
+  { id: 'ACTION_ITEMS', label: 'ACTION ITEM REGISTRY' },
+  { id: 'KEY_POINTS', label: 'KEY POINTS & TAKEAWAYS' },
+  { id: 'QUESTIONS', label: 'QUESTIONS RAISED' },
+  { id: 'HIGHLIGHTS', label: 'KEY HIGHLIGHTS' },
+  { id: 'PARTICIPANTS', label: 'PARTICIPANTS & SPEAKERS' }
 ];
 
 export function ReportTab() {
@@ -70,7 +58,6 @@ export function ReportTab() {
   const [isCopied, setIsCopied] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
 
-  // Load existing reports and initial live preview
   useEffect(() => {
     loadReportsAndPreview();
   }, [id]);
@@ -79,7 +66,6 @@ export function ReportTab() {
     setIsLoading(true);
     setErrorMsg(null);
     try {
-      // 1. Load existing generated reports for this content
       const reportsRes = await reportService.getContentReports(id);
       const fetchedReports = reportsRes.data || [];
       setReports(fetchedReports);
@@ -88,7 +74,6 @@ export function ReportTab() {
         setActiveReport(fetchedReports[0]);
       }
 
-      // 2. Fetch live preview
       const previewRes = await reportService.previewReport(id, {
         templateId: selectedTemplate,
         detailLevel: selectedDetail,
@@ -128,11 +113,11 @@ export function ReportTab() {
     const fmt = formatOverride || selectedFormat;
     setIsGenerating(true);
     setErrorMsg(null);
-    setGenerationStage('Building Structured Report...');
+    setGenerationStage('BUILDING STRUCTURED REPORT...');
 
     try {
-      setTimeout(() => setGenerationStage('Rendering Document...'), 400);
-      setTimeout(() => setGenerationStage('Uploading to Secure Storage...'), 800);
+      setTimeout(() => setGenerationStage('RENDERING DOCUMENT...'), 400);
+      setTimeout(() => setGenerationStage('UPLOADING TO S3 STORAGE...'), 800);
 
       const res = await reportService.generateReport(id, {
         templateId: selectedTemplate,
@@ -201,95 +186,92 @@ export function ReportTab() {
     }
   };
 
-  if (isLoading) return <LoadingState message="Compiling intelligence report preview..." />;
+  if (isLoading) return <LoadingState message="COMPILING INTELLIGENCE REPORT..." />;
 
   const displayData = activeReport?.structuredData || previewData;
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-8 max-w-5xl">
       {/* Top Action Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-brand-white border border-brand-charcoal/15 shadow-sm">
-        <div className="flex items-center space-x-3">
-          <FileCheck className="w-5 h-5 text-emerald-700" />
-          <div>
-            <span className="font-display text-lg uppercase text-brand-navy">
-              {activeReport ? `Report v${activeReport.version} (${activeReport.format})` : 'Report Preview Ready'}
-            </span>
-            <p className="text-[11px] font-mono text-brand-taupe">
-              {activeReport ? `Generated ${formatDate(activeReport.createdAt)}` : 'Live structured preview based on existing AI analysis'}
-            </p>
-          </div>
+      <div className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-6 bg-white/70 border border-[#C7C7C7]">
+        <div className="space-y-1">
+          <span className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-[#1351AA] block">
+            {activeReport ? `REPORT V${activeReport.version} (${activeReport.format})` : 'LIVE REPORT PREVIEW'}
+          </span>
+          <p className="text-xs font-mono text-[#7A7A7A]">
+            {activeReport ? `GENERATED ${formatDate(activeReport.createdAt)}` : 'DETERMINISTIC COMPILATION BASED ON RECORDING'}
+          </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
+        <div className="flex flex-wrap items-center gap-3">
+          <PosterButton
             variant="outline"
             size="sm"
             onClick={() => setShowConfig(!showConfig)}
             icon={Sliders}
           >
-            {showConfig ? 'Hide Builder' : 'Customize Report'}
-          </Button>
+            {showConfig ? 'HIDE BUILDER' : 'CUSTOMIZE REPORT'}
+          </PosterButton>
 
           {activeReport?.storageKey ? (
             <>
-              <Button
+              <PosterButton
                 variant="primary"
                 size="sm"
                 onClick={() => handleDownload(activeReport.id, activeReport.format)}
                 icon={Download}
               >
-                Download {activeReport.format}
-              </Button>
-              <Button
+                DOWNLOAD {activeReport.format}
+              </PosterButton>
+              <PosterButton
                 variant="secondary"
                 size="sm"
                 onClick={handleOpenShare}
                 icon={Share2}
               >
-                Share
-              </Button>
+                SHARE
+              </PosterButton>
             </>
           ) : (
-            <Button
+            <PosterButton
               variant="primary"
               size="sm"
               onClick={() => handleGenerateReport('PDF')}
               disabled={isGenerating}
               icon={Sparkles}
             >
-              {isGenerating ? generationStage || 'Generating...' : 'Generate PDF'}
-            </Button>
+              {isGenerating ? generationStage || 'GENERATING...' : 'GENERATE PDF'}
+            </PosterButton>
           )}
         </div>
       </div>
 
       {/* Error alert */}
       {errorMsg && (
-        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between">
+        <div className="p-4 bg-[#9e1c1c]/10 border border-[#9e1c1c] text-[#9e1c1c] text-xs font-mono flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <AlertCircle className="w-4 h-4 text-rose-600" />
+            <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
-          <Button variant="outline" size="sm" onClick={loadReportsAndPreview}>Retry</Button>
+          <PosterButton variant="outline" size="sm" onClick={loadReportsAndPreview}>RETRY</PosterButton>
         </div>
       )}
 
       {/* Version Selector Chips */}
       {reports.length > 1 && (
-        <div className="flex items-center space-x-2 p-2 bg-brand-light border border-brand-charcoal/10 overflow-x-auto text-xs">
-          <span className="font-mono text-brand-taupe uppercase text-[10px] pl-2">Versions:</span>
+        <div className="flex items-center space-x-2 p-2 bg-white/50 border border-[#C7C7C7] overflow-x-auto text-xs font-mono">
+          <span className="text-[#7A7A7A] uppercase font-bold pl-2">VERSIONS:</span>
           {reports.map((rep) => (
             <button
               key={rep.id}
               onClick={() => setActiveReport(rep)}
-              className={`px-3 py-1 font-mono text-xs border transition-all ${
+              className={`px-3 py-1 text-xs border transition-colors cursor-pointer uppercase ${
                 activeReport?.id === rep.id
-                  ? 'bg-brand-navy text-brand-white border-brand-navy'
-                  : 'bg-brand-white text-brand-charcoal border-brand-charcoal/20 hover:border-brand-charcoal/40'
+                  ? 'bg-[#141414] text-[#E3E2DE] border-[#141414]'
+                  : 'bg-white text-[#141414] border-[#C7C7C7] hover:border-[#141414]'
               }`}
             >
-              v{rep.version} • {rep.format} ({formatDate(rep.createdAt)})
+              V{rep.version} • {rep.format} ({formatDate(rep.createdAt)})
             </button>
           ))}
         </div>
@@ -297,20 +279,20 @@ export function ReportTab() {
 
       {/* Custom Report Builder Panel */}
       {showConfig && (
-        <Card className="p-6 border-brand-charcoal/20 bg-brand-light space-y-6">
-          <div className="border-b border-brand-charcoal/15 pb-3">
-            <h3 className="font-display text-xl uppercase tracking-wide text-brand-navy">
-              Report Customization Engine
+        <div className="p-6 sm:p-8 bg-white/70 border border-[#C7C7C7] space-y-6">
+          <div className="border-b border-[#C7C7C7] pb-4">
+            <h3 className="text-xl font-bold uppercase tracking-tight text-[#141414]">
+              REPORT CUSTOMIZATION ENGINE
             </h3>
-            <p className="text-xs text-brand-taupe">
+            <p className="text-xs text-[#444343] mt-1">
               Tailor document sections, detail levels, and export formats without re-running audio transcription or AI analysis.
             </p>
           </div>
 
           {/* Template Selection */}
-          <div>
-            <label className="block text-xs font-mono font-bold uppercase text-brand-charcoal mb-2">
-              1. Choose Report Template
+          <div className="space-y-2">
+            <label className="block text-xs font-mono font-bold uppercase text-[#7A7A7A]">
+              1. CHOOSE REPORT TEMPLATE
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {TEMPLATES.map((tmpl) => (
@@ -320,14 +302,14 @@ export function ReportTab() {
                     setSelectedTemplate(tmpl.id);
                     handleRefreshPreview();
                   }}
-                  className={`p-3 border cursor-pointer transition-all ${
+                  className={`p-4 border cursor-pointer transition-colors ${
                     selectedTemplate === tmpl.id
-                      ? 'bg-brand-white border-brand-navy ring-1 ring-brand-navy shadow-sm'
-                      : 'bg-brand-white/60 border-brand-charcoal/15 hover:border-brand-charcoal/30'
+                      ? 'bg-white border-[#1351AA] border-2 shadow-none'
+                      : 'bg-[#E3E2DE]/30 border-[#C7C7C7] hover:border-[#141414]'
                   }`}
                 >
-                  <div className="font-display uppercase text-sm text-brand-navy">{tmpl.name}</div>
-                  <div className="text-[11px] text-brand-taupe mt-1">{tmpl.desc}</div>
+                  <div className="font-bold uppercase text-xs text-[#141414]">{tmpl.name}</div>
+                  <div className="text-[10px] text-[#7A7A7A] mt-1">{tmpl.desc}</div>
                 </div>
               ))}
             </div>
@@ -335,19 +317,19 @@ export function ReportTab() {
 
           {/* Format & Detail Level */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-mono font-bold uppercase text-brand-charcoal mb-2">
-                2. Export Format
+            <div className="space-y-2">
+              <label className="block text-xs font-mono font-bold uppercase text-[#7A7A7A]">
+                2. EXPORT FORMAT
               </label>
               <div className="flex gap-2">
                 {['PDF', 'DOCX', 'MARKDOWN', 'TXT'].map((fmt) => (
                   <button
                     key={fmt}
                     onClick={() => setSelectedFormat(fmt)}
-                    className={`flex-1 py-2 font-mono text-xs border transition-all uppercase ${
+                    className={`flex-1 py-2 font-mono text-xs font-bold uppercase border transition-colors cursor-pointer ${
                       selectedFormat === fmt
-                        ? 'bg-brand-navy text-brand-white border-brand-navy'
-                        : 'bg-brand-white text-brand-charcoal border-brand-charcoal/20'
+                        ? 'bg-[#141414] text-[#E3E2DE] border-[#141414]'
+                        : 'bg-white text-[#141414] border-[#C7C7C7]'
                     }`}
                   >
                     {fmt}
@@ -356,9 +338,9 @@ export function ReportTab() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-mono font-bold uppercase text-brand-charcoal mb-2">
-                3. Detail Level
+            <div className="space-y-2">
+              <label className="block text-xs font-mono font-bold uppercase text-[#7A7A7A]">
+                3. DETAIL LEVEL
               </label>
               <div className="flex gap-2">
                 {['BRIEF', 'STANDARD', 'DETAILED'].map((lvl) => (
@@ -368,10 +350,10 @@ export function ReportTab() {
                       setSelectedDetail(lvl);
                       handleRefreshPreview();
                     }}
-                    className={`flex-1 py-2 font-mono text-xs border transition-all uppercase ${
+                    className={`flex-1 py-2 font-mono text-xs font-bold uppercase border transition-colors cursor-pointer ${
                       selectedDetail === lvl
-                        ? 'bg-brand-navy text-brand-white border-brand-navy'
-                        : 'bg-brand-white text-brand-charcoal border-brand-charcoal/20'
+                        ? 'bg-[#141414] text-[#E3E2DE] border-[#141414]'
+                        : 'bg-white text-[#141414] border-[#C7C7C7]'
                     }`}
                   >
                     {lvl}
@@ -382,115 +364,112 @@ export function ReportTab() {
           </div>
 
           {/* Section Selection */}
-          <div>
-            <label className="block text-xs font-mono font-bold uppercase text-brand-charcoal mb-2">
-              4. Include Sections
+          <div className="space-y-2">
+            <label className="block text-xs font-mono font-bold uppercase text-[#7A7A7A]">
+              4. INCLUDE SECTIONS
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {SECTIONS_LIST.map((sec) => (
                 <label
                   key={sec.id}
-                  className="flex items-center space-x-2 text-xs p-2 bg-brand-white border border-brand-charcoal/15 cursor-pointer hover:bg-brand-light"
+                  className="flex items-center space-x-2 text-xs p-3 bg-white border border-[#C7C7C7] cursor-pointer hover:border-[#1351AA]"
                 >
                   <input
                     type="checkbox"
                     checked={selectedSections.includes(sec.id)}
                     onChange={() => toggleSection(sec.id)}
-                    className="accent-brand-navy"
+                    className="accent-[#1351AA]"
                   />
-                  <span className="text-brand-charcoal">{sec.label}</span>
+                  <span className="font-mono text-[11px] font-bold text-[#141414]">{sec.label}</span>
                 </label>
               ))}
             </div>
           </div>
 
           {/* Action Row */}
-          <div className="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-brand-charcoal/15">
-            <Button variant="outline" size="sm" onClick={handleRefreshPreview}>
-              Update Live Preview
-            </Button>
-            <Button
+          <div className="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-[#C7C7C7]">
+            <PosterButton variant="outline" size="sm" onClick={handleRefreshPreview}>
+              UPDATE LIVE PREVIEW
+            </PosterButton>
+            <PosterButton
               variant="primary"
               size="sm"
               disabled={isGenerating}
               onClick={() => handleGenerateReport()}
-              icon={Sparkles}
             >
-              {isGenerating ? generationStage || 'Generating Document...' : `Generate ${selectedFormat} Document`}
-            </Button>
+              {isGenerating ? generationStage || 'GENERATING...' : `GENERATE ${selectedFormat} DOCUMENT`}
+            </PosterButton>
           </div>
-        </Card>
+        </div>
       )}
 
       {/* Printable Report Preview Canvas */}
-      <div className="bg-brand-white border border-brand-charcoal/20 p-8 sm:p-12 shadow-lg font-sans text-brand-navy space-y-8">
-        {/* Document Header */}
-        <div className="border-b-2 border-brand-navy pb-6">
-          <span className="text-[10px] font-mono font-bold tracking-widest text-brand-taupe uppercase">
+      <div className="bg-white border border-[#C7C7C7] p-8 sm:p-14 font-sans text-[#141414] space-y-10">
+        <div className="border-b-2 border-[#141414] pb-8 space-y-4">
+          <span className="text-xs font-mono font-bold tracking-[0.2em] text-[#7A7A7A] uppercase block">
             WRAPAI INTELLIGENCE SUITE • {displayData?.template || selectedTemplate} REPORT
           </span>
-          <h1 className="font-display text-3xl sm:text-4xl uppercase tracking-wider text-brand-navy mt-1">
+          <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-[#141414]">
             {displayData?.title || content?.title}
           </h1>
 
-          {/* Metadata Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 p-3 bg-brand-light border border-brand-charcoal/15 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-[#C7C7C7] text-xs font-mono">
             <div>
-              <span className="font-mono text-[10px] uppercase text-brand-taupe block">DATE</span>
-              <span className="font-semibold text-brand-charcoal">{formatDate(displayData?.metadata?.date || content?.createdAt)}</span>
+              <span className="text-[10px] uppercase text-[#7A7A7A] block font-bold">DATE</span>
+              <span className="font-bold text-[#141414]">{formatDate(displayData?.metadata?.date || content?.createdAt)}</span>
             </div>
             <div>
-              <span className="font-mono text-[10px] uppercase text-brand-taupe block">DURATION</span>
-              <span className="font-semibold text-brand-charcoal">{displayData?.metadata?.formattedDuration || 'N/A'}</span>
+              <span className="text-[10px] uppercase text-[#7A7A7A] block font-bold">DURATION</span>
+              <span className="text-[#141414]">{displayData?.metadata?.formattedDuration || 'N/A'}</span>
             </div>
             <div>
-              <span className="font-mono text-[10px] uppercase text-brand-taupe block">PARTICIPANTS</span>
-              <span className="font-semibold text-brand-charcoal">{displayData?.metadata?.participantCount || 1} identified</span>
+              <span className="text-[10px] uppercase text-[#7A7A7A] block font-bold">PARTICIPANTS</span>
+              <span className="text-[#141414]">{displayData?.metadata?.participantCount || 1} IDENTIFIED</span>
             </div>
             <div>
-              <span className="font-mono text-[10px] uppercase text-brand-taupe block">DETAIL LEVEL</span>
-              <span className="font-semibold text-brand-charcoal">{displayData?.detailLevel || selectedDetail}</span>
+              <span className="text-[10px] uppercase text-[#7A7A7A] block font-bold">DETAIL LEVEL</span>
+              <span className="text-[#141414]">{displayData?.detailLevel || selectedDetail}</span>
             </div>
           </div>
         </div>
 
         {/* Dynamic Sections */}
         {(displayData?.sections || []).map((sec) => (
-          <div key={sec.id} className="space-y-3">
-            <h3 className="font-display text-xl uppercase tracking-wide text-brand-navy border-b border-brand-charcoal/15 pb-1 flex items-center justify-between">
-              <span>{sec.title}</span>
+          <div key={sec.id} className="space-y-4">
+            <h3 className="text-lg sm:text-xl font-black uppercase tracking-tight text-[#141414] border-b border-[#C7C7C7] pb-2">
+              {sec.title}
             </h3>
 
             {sec.type === 'paragraph' && (
-              <p className="text-xs text-brand-charcoal leading-relaxed whitespace-pre-line bg-brand-light/40 p-4 border border-brand-charcoal/10">
+              <p className="text-sm text-[#444343] leading-relaxed whitespace-pre-line bg-[#E3E2DE]/30 p-5 border border-[#C7C7C7]">
                 {sec.content}
               </p>
             )}
 
             {sec.type === 'topics' && (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {sec.items?.map((t, idx) => (
-                  <div key={idx} className="text-xs p-3 bg-brand-light/30 border border-brand-charcoal/10">
-                    <div className="flex items-center justify-between font-semibold text-brand-navy">
-                      <span>• {t.title}</span>
-                      {t.timecode && <span className="font-mono text-[10px] text-brand-taupe">[{t.timecode}]</span>}
+                  <div key={idx} className="text-sm p-4 bg-[#E3E2DE]/30 border border-[#C7C7C7] space-y-1">
+                    <div className="flex items-center justify-between font-bold text-[#141414]">
+                      <span>0{idx + 1}. {t.title}</span>
+                      {t.timecode && <span className="font-mono text-xs text-[#1351AA]">[{t.timecode}]</span>}
                     </div>
-                    {t.summary && <p className="text-[11px] text-brand-charcoal mt-1 leading-normal">{t.summary}</p>}
+                    {t.summary && <p className="text-xs text-[#444343] leading-relaxed">{t.summary}</p>}
                   </div>
                 ))}
               </div>
             )}
 
             {sec.type === 'decisions' && (
-              <ul className="space-y-2 text-xs">
+              <ul className="space-y-3 text-sm">
                 {sec.items?.map((d, idx) => (
-                  <li key={idx} className="p-3 bg-emerald-50/50 border border-emerald-200 text-brand-charcoal flex items-start space-x-2">
-                    <Check className="w-4 h-4 text-emerald-700 flex-shrink-0 mt-0.5" />
+                  <li key={idx} className="p-4 bg-[#1b6b36]/5 border border-[#1b6b36] text-[#141414] flex items-start space-x-3">
+                    <Check className="w-4 h-4 text-[#1b6b36] flex-shrink-0 mt-0.5" />
                     <div>
-                      <strong className="text-emerald-950">{d.title}</strong>
-                      {d.timecode && <span className="font-mono text-[10px] text-brand-taupe ml-2">({d.timecode})</span>}
+                      <strong className="font-bold uppercase text-[#141414]">{d.title}</strong>
+                      {d.timecode && <span className="font-mono text-xs text-[#7A7A7A] ml-2">({d.timecode})</span>}
                       {d.description && d.description !== d.title && (
-                        <p className="text-[11px] text-emerald-900/80 mt-0.5">{d.description}</p>
+                        <p className="text-xs text-[#444343] mt-1">{d.description}</p>
                       )}
                     </div>
                   </li>
@@ -499,22 +478,22 @@ export function ReportTab() {
             )}
 
             {sec.type === 'action_items' && (
-              <table className="w-full text-xs text-left border border-brand-charcoal/20">
-                <thead className="bg-brand-light border-b border-brand-charcoal/20 uppercase font-mono text-[10px]">
+              <table className="w-full text-xs text-left border border-[#C7C7C7]">
+                <thead className="bg-[#E3E2DE] border-b border-[#C7C7C7] uppercase font-mono text-[10px] text-[#141414]">
                   <tr>
-                    <th className="p-2.5">Task</th>
-                    <th className="p-2.5">Owner</th>
-                    <th className="p-2.5">Deadline</th>
-                    <th className="p-2.5">Status</th>
+                    <th className="p-3">TASK</th>
+                    <th className="p-3">OWNER</th>
+                    <th className="p-3">DEADLINE</th>
+                    <th className="p-3">STATUS</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-brand-charcoal/10">
+                <tbody className="divide-y divide-[#C7C7C7]">
                   {sec.items?.map((a, idx) => (
                     <tr key={idx}>
-                      <td className="p-2.5 font-bold text-brand-navy">{a.task}</td>
-                      <td className="p-2.5 font-mono text-brand-charcoal">{a.owner}</td>
-                      <td className="p-2.5 font-mono text-brand-charcoal">{a.deadline}</td>
-                      <td className="p-2.5 font-mono text-brand-taupe">{a.status}</td>
+                      <td className="p-3 font-bold text-[#141414]">{a.task}</td>
+                      <td className="p-3 font-mono text-[#444343]">{a.owner}</td>
+                      <td className="p-3 font-mono text-[#444343]">{a.deadline}</td>
+                      <td className="p-3 font-mono text-[#7A7A7A] uppercase">{a.status}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -522,22 +501,23 @@ export function ReportTab() {
             )}
 
             {sec.type === 'key_points' && (
-              <ul className="list-disc pl-5 space-y-1 text-xs text-brand-charcoal">
+              <ul className="space-y-2 text-xs text-[#444343]">
                 {sec.items?.map((kp, idx) => (
-                  <li key={idx}>
-                    {kp.text} {kp.timecode && <span className="font-mono text-[10px] text-brand-taupe">({kp.timecode})</span>}
+                  <li key={idx} className="flex items-start space-x-2">
+                    <span className="font-mono text-[#1351AA] font-bold">•</span>
+                    <span>{kp.text} {kp.timecode && <span className="font-mono text-[10px] text-[#7A7A7A]">({kp.timecode})</span>}</span>
                   </li>
                 ))}
               </ul>
             )}
 
             {sec.type === 'highlights' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {sec.items?.map((hl, idx) => (
-                  <div key={idx} className="p-2.5 bg-cyan-50/50 border border-cyan-200 text-xs">
-                    <span className="font-bold text-cyan-950">★ {hl.title}</span>
-                    {hl.timecode && <span className="font-mono text-[10px] text-brand-taupe ml-1">[{hl.timecode}]</span>}
-                    {hl.description && <p className="text-[11px] text-cyan-900 mt-1">{hl.description}</p>}
+                  <div key={idx} className="p-3 bg-[#1351AA]/5 border border-[#1351AA] text-xs space-y-1">
+                    <span className="font-bold text-[#1351AA] uppercase">★ {hl.title}</span>
+                    {hl.timecode && <span className="font-mono text-[10px] text-[#7A7A7A] ml-2">[{hl.timecode}]</span>}
+                    {hl.description && <p className="text-[#444343]">{hl.description}</p>}
                   </div>
                 ))}
               </div>
@@ -546,10 +526,10 @@ export function ReportTab() {
             {sec.type === 'participants' && (
               <div className="flex flex-wrap gap-2">
                 {sec.items?.map((spk, idx) => (
-                  <span key={idx} className="px-3 py-1.5 bg-brand-light border border-brand-charcoal/15 text-xs text-brand-charcoal flex items-center space-x-1">
-                    <Users className="w-3.5 h-3.5 text-brand-taupe" />
-                    <strong>{spk.name}</strong>
-                    <span className="text-brand-taupe font-mono text-[10px]">({spk.speakingTimeFormatted})</span>
+                  <span key={idx} className="px-3 py-1.5 bg-[#E3E2DE] border border-[#C7C7C7] text-xs font-mono text-[#141414] flex items-center space-x-2">
+                    <Users className="w-3.5 h-3.5 text-[#7A7A7A]" />
+                    <strong className="uppercase">{spk.name}</strong>
+                    <span className="text-[#7A7A7A]">({spk.speakingTimeFormatted})</span>
                   </span>
                 ))}
               </div>
@@ -557,33 +537,32 @@ export function ReportTab() {
           </div>
         ))}
 
-        {/* Footer */}
-        <div className="border-t border-brand-charcoal/15 pt-6 text-center text-[10px] font-mono text-brand-taupe flex items-center justify-between">
-          <span>WrapAI Intelligence Platform</span>
-          <span>From Content to Clarity</span>
-          <span>Confidential</span>
+        <div className="border-t border-[#C7C7C7] pt-8 text-center text-xs font-mono text-[#7A7A7A] flex items-center justify-between">
+          <span>WRAPAI INTELLIGENCE PLATFORM</span>
+          <span>FROM CONTENT TO CLARITY</span>
+          <span>CONFIDENTIAL</span>
         </div>
       </div>
 
       {/* Share Modal */}
       {showShareModal && shareInfo && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <Card className="w-full max-w-md p-6 bg-brand-white border border-brand-charcoal/20 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-brand-charcoal/15 pb-3">
-              <h3 className="font-display text-lg uppercase tracking-wide text-brand-navy flex items-center space-x-2">
-                <Share2 className="w-4 h-4 text-brand-navy" />
-                <span>Share Intelligence Report</span>
+          <div className="w-full max-w-md p-8 bg-white border border-[#141414] space-y-6">
+            <div className="flex items-center justify-between border-b border-[#C7C7C7] pb-4">
+              <h3 className="font-bold uppercase tracking-tight text-lg text-[#141414] flex items-center space-x-2">
+                <Share2 className="w-4 h-4 text-[#1351AA]" />
+                <span>SHARE REPORT</span>
               </h3>
               <button
                 onClick={() => setShowShareModal(false)}
-                className="text-brand-taupe hover:text-brand-navy text-lg font-bold"
+                className="text-[#7A7A7A] hover:text-[#141414] text-xl font-bold cursor-pointer"
               >
                 ×
               </button>
             </div>
 
-            <p className="text-xs text-brand-charcoal">
-              Anyone with this link can view this read-only report. Transcripts and private user details remain protected.
+            <p className="text-xs text-[#444343] leading-relaxed">
+              Anyone with this link can view this read-only report. Transcripts and user settings remain protected.
             </p>
 
             <div className="flex items-center space-x-2">
@@ -591,28 +570,30 @@ export function ReportTab() {
                 type="text"
                 readOnly
                 value={shareInfo.shareUrl}
-                className="flex-1 p-2 text-xs font-mono bg-brand-light border border-brand-charcoal/20 select-all"
+                className="flex-1 p-2.5 text-xs font-mono bg-[#E3E2DE] border border-[#C7C7C7] select-all"
               />
-              <Button variant="primary" size="sm" onClick={handleCopyLink} icon={isCopied ? Check : Copy}>
-                {isCopied ? 'Copied' : 'Copy'}
-              </Button>
+              <PosterButton variant="primary" size="sm" onClick={handleCopyLink}>
+                {isCopied ? 'COPIED' : 'COPY'}
+              </PosterButton>
             </div>
 
-            <div className="text-[11px] font-mono text-brand-taupe">
-              Expires: {new Date(shareInfo.shareExpiresAt).toLocaleDateString()}
+            <div className="text-[10px] font-mono text-[#7A7A7A] uppercase">
+              EXPIRES: {new Date(shareInfo.shareExpiresAt).toLocaleDateString()}
             </div>
 
-            <div className="pt-3 border-t border-brand-charcoal/15 flex items-center justify-between">
-              <Button variant="outline" size="sm" onClick={handleRevokeShare} className="text-rose-600 border-rose-200">
-                Revoke Link
-              </Button>
-              <Button variant="secondary" size="sm" onClick={() => setShowShareModal(false)}>
-                Done
-              </Button>
+            <div className="pt-4 border-t border-[#C7C7C7] flex items-center justify-between">
+              <PosterButton variant="outline" size="sm" onClick={handleRevokeShare}>
+                REVOKE LINK
+              </PosterButton>
+              <PosterButton variant="secondary" size="sm" onClick={() => setShowShareModal(false)}>
+                DONE
+              </PosterButton>
             </div>
-          </Card>
+          </div>
         </div>
       )}
     </div>
   );
 }
+
+export default ReportTab;

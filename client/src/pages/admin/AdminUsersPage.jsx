@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { adminService } from '../../services/adminService.js';
-import { Button } from '../../components/ui/Button.jsx';
+import { PosterButton } from '../../components/ui/PosterButton.jsx';
 import { Input } from '../../components/ui/Input.jsx';
-import { Badge } from '../../components/ui/Badge.jsx';
 import { LoadingState } from '../../components/common/LoadingState.jsx';
-import { Search, UserCheck, Shield, UserX, Trash2 } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { formatDate, formatBytes } from '../../utils/formatters.js';
 
 export function AdminUsersPage() {
@@ -16,7 +15,7 @@ export function AdminUsersPage() {
     setIsLoading(true);
     try {
       const res = await adminService.getUsers();
-      setUsers(res.data);
+      setUsers(res.data || []);
     } finally {
       setIsLoading(false);
     }
@@ -52,83 +51,89 @@ export function AdminUsersPage() {
       u.email.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (isLoading) return <LoadingState message="Loading user directory..." />;
+  if (isLoading) return <LoadingState message="POLLING USER DIRECTORY..." />;
 
   return (
-    <div className="space-y-6">
-      <div className="pb-4 border-b border-brand-charcoal">
-        <span className="text-xs font-mono font-bold uppercase tracking-widest text-brand-sage">GOVERNANCE</span>
-        <h1 className="font-display text-4xl uppercase tracking-tight text-brand-white mt-1">
-          User Management
-        </h1>
+    <div className="space-y-8">
+      {/* 1. Header */}
+      <div className="border-b border-[#444343] pb-8">
+        <div className="space-y-2">
+          <span className="font-mono text-xs font-bold text-[#1351AA] uppercase tracking-[0.2em] block">
+            GOVERNANCE & IDENTITIES
+          </span>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight text-[#E3E2DE]">
+            USER <br />
+            <span className="text-[#1351AA]">DIRECTORY.</span>
+          </h1>
+        </div>
       </div>
 
-      <div className="bg-brand-navy border border-brand-charcoal p-4 max-w-md">
+      {/* 2. Filter Bar */}
+      <div className="bg-black/40 border border-[#444343] p-4 max-w-md">
         <Input
           icon={Search}
-          placeholder="Search users by name or email..."
+          placeholder="SEARCH BY NAME OR EMAIL..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="bg-brand-charcoal text-white border-brand-charcoal"
         />
       </div>
 
-      {/* Users Table */}
-      <div className="bg-brand-navy border border-brand-charcoal overflow-x-auto">
-        <table className="w-full text-left text-xs text-brand-light font-sans">
-          <thead className="bg-black/30 border-b border-brand-charcoal uppercase font-mono text-[10px] text-brand-sage">
+      {/* 3. Users Table */}
+      <div className="bg-black/40 border border-[#444343] overflow-x-auto">
+        <table className="w-full text-left text-xs text-[#E3E2DE] font-sans">
+          <thead className="bg-black/60 border-b border-[#444343] uppercase font-mono text-[10px] text-[#7A7A7A]">
             <tr>
-              <th className="p-4">User</th>
-              <th className="p-4">Role</th>
-              <th className="p-4">Joined</th>
-              <th className="p-4">Content Count</th>
-              <th className="p-4">Storage Used</th>
-              <th className="p-4">Status</th>
-              <th className="p-4 text-right">Actions</th>
+              <th className="p-4">USER</th>
+              <th className="p-4">ROLE</th>
+              <th className="p-4">JOINED</th>
+              <th className="p-4">CONTENT COUNT</th>
+              <th className="p-4">STORAGE USED</th>
+              <th className="p-4">STATUS</th>
+              <th className="p-4 text-right">ACTIONS</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-brand-charcoal">
-            {filtered.map((u) => (
-              <tr key={u.id} className="hover:bg-brand-charcoal/40 transition-colors">
+          <tbody className="divide-y divide-[#444343]">
+            {filtered.map((u, idx) => (
+              <tr key={u.id} className="hover:bg-white/5 transition-colors">
                 <td className="p-4 font-bold flex items-center space-x-3">
-                  <img src={u.avatar} alt={u.fullName} className="w-7 h-7 object-cover" />
+                  <div className="w-8 h-8 bg-[#141414] border border-[#444343] flex items-center justify-center font-mono font-bold text-[#E3E2DE]">
+                    0{idx + 1}
+                  </div>
                   <div>
-                    <p className="text-white">{u.fullName}</p>
-                    <p className="text-[10px] font-mono text-brand-sage">{u.email}</p>
+                    <p className="text-[#E3E2DE] uppercase font-bold">{u.fullName}</p>
+                    <p className="text-[10px] font-mono text-[#7A7A7A]">{u.email}</p>
                   </div>
                 </td>
-                <td className="p-4">
-                  <Badge variant={u.role === 'ADMIN' ? 'cyan' : 'default'}>{u.role}</Badge>
+                <td className="p-4 font-mono font-bold uppercase text-[#1351AA]">
+                  {u.role}
                 </td>
-                <td className="p-4 font-mono text-brand-sage">{formatDate(u.joinedAt)}</td>
-                <td className="p-4 font-mono">{u.contentCount} items</td>
-                <td className="p-4 font-mono">{formatBytes(u.storageUsedBytes)}</td>
+                <td className="p-4 font-mono text-[#7A7A7A]">{formatDate(u.joinedAt)}</td>
+                <td className="p-4 font-mono text-[#E3E2DE]">{u.contentCount} ITEMS</td>
+                <td className="p-4 font-mono text-[#E3E2DE]">{formatBytes(u.storageUsedBytes)}</td>
                 <td className="p-4">
                   <span
                     className={`font-mono text-[10px] uppercase font-bold ${
-                      u.status === 'ACTIVE' ? 'text-emerald-400' : 'text-amber-400'
+                      u.status === 'ACTIVE' ? 'text-[#1b6b36]' : 'text-[#9e1c1c]'
                     }`}
                   >
                     {u.status}
                   </span>
                 </td>
                 <td className="p-4 text-right space-x-2">
-                  <Button
+                  <PosterButton
                     variant="outline"
                     size="sm"
-                    className="border-brand-charcoal text-brand-sage hover:text-white"
                     onClick={() => toggleUserStatus(u.id)}
                   >
-                    {u.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
-                  </Button>
-                  <Button
+                    {u.status === 'ACTIVE' ? 'DEACTIVATE' : 'ACTIVATE'}
+                  </PosterButton>
+                  <PosterButton
                     variant="secondary"
                     size="sm"
-                    className="bg-brand-charcoal text-white"
                     onClick={() => toggleUserRole(u.id)}
                   >
-                    Role: {u.role}
-                  </Button>
+                    TOGGLE ROLE
+                  </PosterButton>
                 </td>
               </tr>
             ))}
@@ -138,3 +143,5 @@ export function AdminUsersPage() {
     </div>
   );
 }
+
+export default AdminUsersPage;

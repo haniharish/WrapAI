@@ -7,39 +7,69 @@ export default {
   theme: {
     extend: {
       colors: {
+        poster: {
+          bg: '#E3E2DE',
+          blue: '#1351AA',
+          black: '#141414',
+          charcoal: '#444343',
+          muted: '#7A7A7A',
+          border: '#C7C7C7',
+          white: '#FFFFFF',
+          hover: '#F2F1ED',
+        },
+        // Brand aliases mapped directly to Poster Modernist palette
         brand: {
-          navy: '#171e19',
-          charcoal: '#302b2f',
-          sage: '#b7c6c2',
-          taupe: '#9f8d8b',
-          beige: '#d7c5b2',
-          cyan: '#d5f4f9',
-          blue: '#bbe2f5',
-          light: '#fafafa',
-          white: '#ffffff',
+          navy: '#141414',
+          charcoal: '#444343',
+          sage: '#1351AA',
+          taupe: '#7A7A7A',
+          beige: '#E3E2DE',
+          cyan: '#1351AA',
+          blue: '#1351AA',
+          light: '#E3E2DE',
+          white: '#FFFFFF',
+          border: '#C7C7C7',
         }
       },
       fontFamily: {
-        display: ['Anton', 'sans-serif'],
-        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+        display: ['"General Sans"', '"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['"General Sans"', '"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'Menlo', 'Monaco', 'Consolas', '"Courier New"', 'monospace'],
+      },
+      borderRadius: {
+        none: '0px',
+        sm: '0px',
+        DEFAULT: '0px',
+        md: '0px',
+        lg: '0px',
+        xl: '0px',
+        '2xl': '0px',
+        '3xl': '0px',
+        full: '0px',
+      },
+      boxShadow: {
+        sm: 'none',
+        DEFAULT: 'none',
+        md: 'none',
+        lg: 'none',
+        xl: 'none',
+        '2xl': 'none',
+        inner: 'none',
+        none: 'none',
       },
       transitionTimingFunction: {
-        'luxury': 'cubic-bezier(0.16, 1, 0.3, 1)',
+        DEFAULT: 'linear',
+        linear: 'linear',
       },
-      keyframes: {
-        float: {
-          '0%, 100%': { transform: 'translateY(0px)' },
-          '50%': { transform: 'translateY(-20px)' },
-        },
-        pulseSlow: {
-          '0%, 100%': { opacity: '0.2' },
-          '50%': { opacity: '0.35' },
-        }
+      transitionDuration: {
+        DEFAULT: '300ms',
+        '300': '300ms',
       },
-      animation: {
-        'float': 'float 8s ease-in-out infinite',
-        'float-slow': 'float 12s ease-in-out infinite',
-        'pulse-slow': 'pulseSlow 6s ease-in-out infinite',
+      letterSpacing: {
+        tightest: '-0.04em',
+        tighter: '-0.03em',
+        tight: '-0.02em',
+        widest: '0.2em',
       }
     },
   },

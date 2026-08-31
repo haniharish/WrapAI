@@ -3,12 +3,12 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useForm } from 'react-hook-form';
 import { userService } from '../../services/userService.js';
 import { updateUser } from '../../store/slices/authSlice.js';
-import { Card } from '../../components/ui/Card.jsx';
-import { Button } from '../../components/ui/Button.jsx';
+import { PosterButton } from '../../components/ui/PosterButton.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import { Select } from '../../components/ui/Select.jsx';
 import { ProgressBar } from '../../components/ui/ProgressBar.jsx';
-import { User, Shield, HardDrive, Trash2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { GridSidebarLabel } from '../../components/ui/GridSidebarLabel.jsx';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { formatBytes } from '../../utils/formatters.js';
 
 export function SettingsPage() {
@@ -41,7 +41,7 @@ export function SettingsPage() {
         timezone: data.timezone
       });
       dispatch(updateUser(res.data));
-      setProfileMsg('Profile details updated successfully.');
+      setProfileMsg('PROFILE DETAILS UPDATED SUCCESSFULLY.');
     } catch (err) {
       alert(err.message || 'Failed to update profile');
     }
@@ -52,7 +52,7 @@ export function SettingsPage() {
     setPasswordErr(null);
     try {
       await userService.changePassword(data.currentPassword, data.newPassword);
-      setPasswordMsg('Password changed successfully.');
+      setPasswordMsg('PASSWORD CHANGED SUCCESSFULLY.');
       resetPasswordForm();
     } catch (err) {
       setPasswordErr(err.message || 'Failed to update password');
@@ -64,122 +64,168 @@ export function SettingsPage() {
   const storagePercent = Math.round((usedBytes / limitBytes) * 100);
 
   return (
-    <div className="max-w-4xl space-y-10">
-      <div className="pb-4 border-b border-brand-charcoal/15">
-        <span className="text-xs font-mono font-bold uppercase tracking-widest text-brand-taupe">WORKSPACE CONFIGURATION</span>
-        <h1 className="font-display text-4xl uppercase tracking-tight text-brand-navy mt-1">
-          Account & Settings
-        </h1>
-      </div>
-
-      {/* 1. Profile Section */}
-      <Card className="p-8">
-        <div className="flex items-center space-x-3 pb-4 border-b border-brand-charcoal/10 mb-6">
-          <User className="w-5 h-5 text-brand-navy" />
-          <h2 className="font-display text-2xl uppercase tracking-wide text-brand-navy">Profile Details</h2>
-        </div>
-
-        {profileMsg && (
-          <div className="mb-6 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center space-x-2">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>{profileMsg}</span>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit(onProfileSubmit)} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input label="Full Name" {...register('fullName', { required: true })} />
-            <Input label="Email Address" type="email" disabled {...register('email')} />
-          </div>
-
-          <Select
-            label="Timezone"
-            {...register('timezone')}
-            options={[
-              { value: 'UTC+05:30 (India Standard Time)', label: 'UTC+05:30 (India Standard Time)' },
-              { value: 'UTC-04:00 (Eastern Time)', label: 'UTC-04:00 (Eastern Time)' },
-              { value: 'UTC+00:00 (GMT)', label: 'UTC+00:00 (GMT)' },
-              { value: 'UTC+01:00 (Central European Time)', label: 'UTC+01:00 (Central European Time)' }
-            ]}
-          />
-
-          <div className="pt-2 flex justify-end">
-            <Button type="submit" variant="primary" size="sm" isLoading={isSubmitting}>Save Profile</Button>
-          </div>
-        </form>
-      </Card>
-
-      {/* 2. Storage Quota Section */}
-      <Card className="p-8">
-        <div className="flex items-center space-x-3 pb-4 border-b border-brand-charcoal/10 mb-6">
-          <HardDrive className="w-5 h-5 text-brand-navy" />
-          <h2 className="font-display text-2xl uppercase tracking-wide text-brand-navy">Storage & Quota</h2>
-        </div>
-
-        <div className="space-y-4">
-          <ProgressBar progress={storagePercent} label={`Storage Used: ${formatBytes(usedBytes)} of ${formatBytes(limitBytes)}`} />
-          <p className="text-xs text-brand-taupe">
-            Large audio and video files are preserved in high-durability AWS S3 object storage. Transcripts and vectors are stored in MongoDB Atlas.
+    <div className="space-y-12">
+      {/* 1. Header */}
+      <div className="border-b border-[#C7C7C7] pb-8">
+        <div className="space-y-2">
+          <span className="font-mono text-xs font-bold text-[#1351AA] uppercase tracking-[0.2em] block">
+            USER CONFIGURATION
+          </span>
+          <h1 className="text-poster-section text-[#141414]">
+            ACCOUNT <br />
+            <span className="text-[#1351AA]">SETTINGS.</span>
+          </h1>
+          <p className="text-xs font-mono text-[#7A7A7A] uppercase">
+            PROFILE, SECURITY PREFERENCES & STORAGE QUOTAS
           </p>
         </div>
-      </Card>
+      </div>
 
-      {/* 3. Security Section */}
-      <Card className="p-8">
-        <div className="flex items-center space-x-3 pb-4 border-b border-brand-charcoal/10 mb-6">
-          <Shield className="w-5 h-5 text-brand-navy" />
-          <h2 className="font-display text-2xl uppercase tracking-wide text-brand-navy">Security & Password</h2>
-        </div>
+      {/* 2. Profile Details */}
+      <div className="grid grid-cols-12 gap-8">
+        <GridSidebarLabel label="PROFILE" index="01">
+          <p className="text-xs font-mono text-[#7A7A7A] uppercase leading-relaxed">
+            IDENTIFICATION
+          </p>
+        </GridSidebarLabel>
 
-        {passwordMsg && (
-          <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center space-x-2">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>{passwordMsg}</span>
-          </div>
-        )}
+        <div className="col-span-12 lg:col-span-9 bg-white/70 border border-[#C7C7C7] p-6 sm:p-10 space-y-6">
+          {profileMsg && (
+            <div className="p-4 bg-[#1b6b36]/10 border border-[#1b6b36] text-[#1b6b36] text-xs font-mono flex items-center space-x-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>{profileMsg}</span>
+            </div>
+          )}
 
-        {passwordErr && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-xs flex items-center space-x-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{passwordErr}</span>
-          </div>
-        )}
+          <form onSubmit={handleSubmit(onProfileSubmit)} className="space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <Input label="FULL NAME" {...register('fullName', { required: true })} />
+              <Input label="EMAIL ADDRESS" type="email" disabled {...register('email')} />
+            </div>
 
-        <form onSubmit={handlePasswordSubmit(onPasswordSubmit)} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="Current Password"
-              type="password"
-              placeholder="••••••••"
-              error={passErrors.currentPassword?.message}
-              {...registerPassword('currentPassword', { required: 'Current password is required' })}
+            <Select
+              label="TIMEZONE"
+              {...register('timezone')}
+              options={[
+                { value: 'UTC+05:30 (India Standard Time)', label: 'UTC+05:30 (INDIA STANDARD TIME)' },
+                { value: 'UTC-04:00 (Eastern Time)', label: 'UTC-04:00 (EASTERN TIME)' },
+                { value: 'UTC+00:00 (GMT)', label: 'UTC+00:00 (GMT)' },
+                { value: 'UTC+01:00 (Central European Time)', label: 'UTC+01:00 (CENTRAL EUROPEAN TIME)' }
+              ]}
             />
-            <Input
-              label="New Password"
-              type="password"
-              placeholder="••••••••"
-              error={passErrors.newPassword?.message}
-              {...registerPassword('newPassword', { required: 'New password is required', minLength: { value: 6, message: 'Minimum 6 characters' } })}
-            />
-          </div>
 
-          <div className="pt-4 flex justify-end">
-            <Button type="submit" variant="outline" size="sm" isLoading={isPassSubmitting}>Change Password</Button>
-          </div>
-        </form>
-      </Card>
-
-      {/* 4. Danger Zone */}
-      <Card className="p-8 border-red-300 bg-red-50/30">
-        <div className="flex items-center space-x-3 pb-4 border-b border-red-200 mb-4 text-red-900">
-          <Trash2 className="w-5 h-5 text-red-700" />
-          <h2 className="font-display text-2xl uppercase tracking-wide">Danger Zone</h2>
+            <div className="pt-2 flex justify-end">
+              <PosterButton type="submit" variant="primary" size="sm" disabled={isSubmitting}>
+                {isSubmitting ? 'SAVING...' : 'SAVE PROFILE'}
+              </PosterButton>
+            </div>
+          </form>
         </div>
-        <p className="text-xs text-red-800 mb-4">
-          Permanently delete your account and all associated audio, video, transcripts, and intelligence reports. This action is irreversible.
-        </p>
-        <Button variant="danger" size="sm" onClick={() => alert('Account deletion requested.')}>Delete Account</Button>
-      </Card>
+      </div>
+
+      {/* 3. Storage Quota */}
+      <div className="grid grid-cols-12 gap-8">
+        <GridSidebarLabel label="STORAGE" index="02">
+          <p className="text-xs font-mono text-[#7A7A7A] uppercase leading-relaxed">
+            S3 OBJECT USAGE
+          </p>
+        </GridSidebarLabel>
+
+        <div className="col-span-12 lg:col-span-9 bg-white/70 border border-[#C7C7C7] p-6 sm:p-10 space-y-4">
+          <ProgressBar progress={storagePercent} label={`STORAGE USED: ${formatBytes(usedBytes)} OF ${formatBytes(limitBytes)}`} />
+          <p className="text-xs font-mono text-[#7A7A7A] leading-relaxed">
+            AUDIO AND VIDEO STREAM ASSETS ARE STORED IN HIGH-DURABILITY AWS S3 OBJECT STORAGE. VECTOR EMBEDDINGS AND TRANSCRIPTS ARE MANAGED IN MONGODB ATLAS.
+          </p>
+        </div>
+      </div>
+
+      {/* 4. Security */}
+      <div className="grid grid-cols-12 gap-8">
+        <GridSidebarLabel label="SECURITY" index="03">
+          <p className="text-xs font-mono text-[#7A7A7A] uppercase leading-relaxed">
+            ACCESS KEYS
+          </p>
+        </GridSidebarLabel>
+
+        <div className="col-span-12 lg:col-span-9 bg-white/70 border border-[#C7C7C7] p-6 sm:p-10 space-y-6">
+          {passwordMsg && (
+            <div className="p-4 bg-[#1b6b36]/10 border border-[#1b6b36] text-[#1b6b36] text-xs font-mono flex items-center space-x-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>{passwordMsg}</span>
+            </div>
+          )}
+
+          {passwordErr && (
+            <div className="p-4 bg-[#9e1c1c]/10 border border-[#9e1c1c] text-[#9e1c1c] text-xs font-mono flex items-center space-x-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{passwordErr}</span>
+            </div>
+          )}
+
+          <form onSubmit={handlePasswordSubmit(onPasswordSubmit)} className="space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <Input
+                label="CURRENT PASSWORD"
+                type="password"
+                placeholder="••••••••"
+                error={passErrors.currentPassword?.message}
+                {...registerPassword('currentPassword', { required: 'Current password is required' })}
+              />
+              <Input
+                label="NEW PASSWORD"
+                type="password"
+                placeholder="••••••••"
+                error={passErrors.newPassword?.message}
+                {...registerPassword('newPassword', { required: 'New password is required', minLength: { value: 6, message: 'Minimum 6 characters' } })}
+              />
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <PosterButton type="submit" variant="outline" size="sm" disabled={isPassSubmitting}>
+                {isPassSubmitting ? 'UPDATING...' : 'CHANGE PASSWORD'}
+              </PosterButton>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {/* 5. Danger Zone */}
+      <div className="grid grid-cols-12 gap-8">
+        <GridSidebarLabel label="DANGER ZONE" index="04">
+          <p className="text-xs font-mono text-[#9e1c1c] uppercase leading-relaxed font-bold">
+            IRREVERSIBLE
+          </p>
+        </GridSidebarLabel>
+
+        <div className="col-span-12 lg:col-span-9 bg-[#9e1c1c]/5 border border-[#9e1c1c] p-6 sm:p-10 space-y-4">
+          <h3 className="text-lg font-black uppercase text-[#9e1c1c]">
+            DELETE ACCOUNT
+          </h3>
+          <p className="text-xs font-mono text-[#444343] leading-relaxed">
+            PERMANENTLY DELETE YOUR ACCOUNT AND ALL ASSOCIATED RECORDINGS, TRANSCRIPTS, CHATS, EMBEDDINGS, AND INTELLIGENCE REPORTS.
+          </p>
+          <div className="pt-2">
+            <PosterButton
+              variant="danger"
+              size="sm"
+              onClick={async () => {
+                if (window.confirm('Are you absolutely sure you want to delete your WrapAI account? This action cannot be undone.')) {
+                  try {
+                    await userService.deleteAccount();
+                    window.location.assign('/login');
+                  } catch (err) {
+                    alert(err.message || 'Failed to delete account');
+                  }
+                }
+              }}
+            >
+              DELETE ACCOUNT
+            </PosterButton>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
+
+export default SettingsPage;

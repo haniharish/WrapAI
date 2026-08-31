@@ -1,30 +1,33 @@
 import React from 'react';
-import { FolderOpen } from 'lucide-react';
-import { Button } from '../ui/Button.jsx';
-import { AmbientBackground } from './AmbientBackground.jsx';
+import { PosterButton } from '../ui/PosterButton.jsx';
 
 export function EmptyState({
-  icon: Icon = FolderOpen,
-  title = 'Nothing here yet',
-  description = 'Upload your first file and let WrapAI turn it into useful insights.',
+  title = 'NO DATA AVAILABLE',
+  description = 'Upload or record content to generate transcriptions and intelligence.',
   actionLabel,
-  onAction
+  onAction,
+  className = ''
 }) {
   return (
-    <div className="relative flex flex-col items-center justify-center p-12 text-center border border-dashed border-brand-charcoal/25 bg-brand-white/70">
-      <AmbientBackground />
-      <div className="relative z-10 w-16 h-16 bg-brand-sage/20 border border-brand-sage flex items-center justify-center text-brand-navy mb-5">
-        <Icon className="w-8 h-8" />
-      </div>
-      <h3 className="relative z-10 font-display text-2xl uppercase tracking-wide text-brand-navy mb-2">{title}</h3>
-      <p className="relative z-10 text-sm text-brand-taupe max-w-md mb-6">{description}</p>
+    <div className={`flex flex-col items-center justify-center p-12 sm:p-16 text-center border border-[#C7C7C7] bg-white/50 space-y-4 ${className}`}>
+      <span className="font-mono text-xs font-bold text-[#7A7A7A] uppercase tracking-[0.2em]">
+        NULL RECORD
+      </span>
+      <h3 className="text-2xl sm:text-3xl font-bold uppercase tracking-tight text-[#141414]">
+        {title}
+      </h3>
+      <p className="text-sm text-[#444343] max-w-md leading-relaxed">
+        {description}
+      </p>
       {actionLabel && onAction && (
-        <div className="relative z-10">
-          <Button variant="primary" onClick={onAction}>
+        <div className="pt-2">
+          <PosterButton variant="primary" onClick={onAction}>
             {actionLabel}
-          </Button>
+          </PosterButton>
         </div>
       )}
     </div>
   );
 }
+
+export default EmptyState;

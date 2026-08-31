@@ -3,10 +3,9 @@ import { useParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { seekPlayback } from '../../../../store/slices/workspaceSlice.js';
 import { intelligenceService } from '../../../../services/intelligenceService.js';
-import { Card } from '../../../../components/ui/Card.jsx';
-import { Badge } from '../../../../components/ui/Badge.jsx';
 import { LoadingState } from '../../../../components/common/LoadingState.jsx';
-import { CheckCircle, Play, User } from 'lucide-react';
+import { GridSidebarLabel } from '../../../../components/ui/GridSidebarLabel.jsx';
+import { Play } from 'lucide-react';
 import { formatTimecode } from '../../../../utils/formatters.js';
 
 export function KeyPointsTab() {
@@ -28,58 +27,80 @@ export function KeyPointsTab() {
     load();
   }, [id]);
 
-  if (isLoading) return <LoadingState message="Extracting key points..." />;
+  if (isLoading) return <LoadingState message="EXTRACTING KEY POINTS..." />;
 
   if (!points || points.length === 0) {
     return (
-      <div className="p-8 text-center bg-brand-white border border-brand-charcoal/10 text-brand-charcoal">
-        <p className="text-sm">No key points extracted yet.</p>
+      <div className="bg-white/70 border border-[#C7C7C7] p-12 text-center text-[#7A7A7A] font-mono text-xs">
+        NO KEY POINTS EXTRACTED YET.
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 max-w-5xl">
-      {points.map((kp, idx) => {
-        const text = kp.text || kp.statement;
-        const speaker = kp.speakerName || kp.speaker || 'Speaker';
-        const timestamp = kp.timestamp !== undefined ? kp.timestamp : (kp.startTime || 0);
+    <div className="space-y-12">
+      <div className="grid grid-cols-12 gap-8">
+        <GridSidebarLabel label="KEY STATEMENTS" index="01">
+          <p className="text-xs font-mono text-[#7A7A7A] uppercase leading-relaxed">
+            {points.length} EXTRACTED STATEMENTS
+          </p>
+        </GridSidebarLabel>
 
-        return (
-          <Card key={kp.id || idx} hover className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-start space-x-3">
-              <CheckCircle className="w-5 h-5 text-brand-navy flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-semibold text-brand-navy">{text}</p>
-                <div className="flex items-center space-x-2 mt-1">
-                  <span className="text-xs text-brand-taupe font-medium flex items-center">
-                    <User className="w-3 h-3 mr-1 inline" /> {speaker}
-                  </span>
-                  {kp.category && (
-                    <span className="text-[11px] font-mono text-brand-charcoal/60 bg-brand-charcoal/5 px-2 py-0.5">
-                      {kp.category}
+        <div className="col-span-12 lg:col-span-9 space-y-6">
+          <div className="divide-y divide-[#C7C7C7] border-y border-[#C7C7C7]">
+            {points.map((kp, idx) => {
+              const text = kp.text || kp.statement;
+              const speaker = kp.speakerName || kp.speaker || 'SPEAKER';
+              const timestamp = kp.timestamp !== undefined ? kp.timestamp : (kp.startTime || 0);
+
+              return (
+                <div
+                  key={kp.id || idx}
+                  className="py-6 px-4 bg-white/40 hover:bg-white/80 transition-colors duration-200 flex flex-col md:flex-row md:items-center justify-between gap-4 group"
+                >
+                  <div className="flex items-start space-x-4">
+                    <span className="font-mono text-sm font-bold text-[#7A7A7A] group-hover:text-[#1351AA]">
+                      {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}
                     </span>
-                  )}
-                </div>
-              </div>
-            </div>
+                    <div className="space-y-1">
+                      <p className="text-base font-bold text-[#141414] leading-relaxed">
+                        {text}
+                      </p>
+                      <div className="flex items-center space-x-3 text-xs font-mono text-[#7A7A7A]">
+                        <span className="font-bold text-[#141414] uppercase">{speaker}</span>
+                        {kp.category && (
+                          <>
+                            <span>•</span>
+                            <span className="uppercase">{kp.category}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
 
-            <div className="flex items-center space-x-3 self-end sm:self-center">
-              <Badge variant={kp.importance === 'HIGH' ? 'cyan' : 'default'}>
-                {kp.importance || 'MEDIUM'}
-              </Badge>
-              <button
-                onClick={() => dispatch(seekPlayback(timestamp))}
-                className="inline-flex items-center text-xs font-mono font-bold text-brand-navy hover:text-brand-charcoal bg-brand-sage/40 hover:bg-brand-sage px-2.5 py-1 transition-colors"
-                title="Jump to this key point in audio/video"
-              >
-                <Play className="w-3 h-3 mr-1" />
-                {formatTimecode(timestamp)}
-              </button>
-            </div>
-          </Card>
-        );
-      })}
+                  <div className="flex items-center space-x-3 self-end md:self-center">
+                    <span className={`px-2.5 py-1 text-[10px] font-mono font-bold uppercase ${
+                      kp.importance === 'HIGH' ? 'bg-[#1351AA] text-[#E3E2DE]' : 'bg-[#E3E2DE] text-[#141414] border border-[#C7C7C7]'
+                    }`}>
+                      {kp.importance || 'MEDIUM'}
+                    </span>
+                    <button
+                      onClick={() => dispatch(seekPlayback(timestamp))}
+                      className="inline-flex items-center text-xs font-mono font-bold text-[#141414] hover:text-[#1351AA] bg-[#E3E2DE] hover:bg-white border border-[#C7C7C7] px-2.5 py-1 transition-colors cursor-pointer"
+                      title="Jump to key point in media player"
+                    >
+                      <Play className="w-2.5 h-2.5 mr-1.5 text-[#1351AA]" />
+                      {formatTimecode(timestamp)}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
+
+export default KeyPointsTab;

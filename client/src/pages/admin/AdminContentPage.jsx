@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { adminService } from '../../services/adminService.js';
 import { Input } from '../../components/ui/Input.jsx';
-import { Badge } from '../../components/ui/Badge.jsx';
 import { LoadingState } from '../../components/common/LoadingState.jsx';
-import { Search, Database, FileText } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { formatDate, formatBytes, formatTimecode } from '../../utils/formatters.js';
 
 export function AdminContentPage() {
@@ -15,7 +14,7 @@ export function AdminContentPage() {
     async function load() {
       try {
         const res = await adminService.getContentMonitoring();
-        setContentList(res.data);
+        setContentList(res.data || []);
       } finally {
         setIsLoading(false);
       }
@@ -23,60 +22,70 @@ export function AdminContentPage() {
     load();
   }, []);
 
-  if (isLoading) return <LoadingState message="Loading ingested content registry..." />;
+  if (isLoading) return <LoadingState message="POLLING CONTENT REGISTRY..." />;
 
   const filtered = contentList.filter((c) =>
     c.title.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <div className="space-y-6">
-      <div className="pb-4 border-b border-brand-charcoal">
-        <span className="text-xs font-mono font-bold uppercase tracking-widest text-brand-sage">INGESTION REGISTRY</span>
-        <h1 className="font-display text-4xl uppercase tracking-tight text-brand-white mt-1">
-          Content Monitoring
-        </h1>
+    <div className="space-y-8">
+      {/* 1. Header */}
+      <div className="border-b border-[#444343] pb-8">
+        <div className="space-y-2">
+          <span className="font-mono text-xs font-bold text-[#1351AA] uppercase tracking-[0.2em] block">
+            INGESTION REGISTRY
+          </span>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight text-[#E3E2DE]">
+            CONTENT <br />
+            <span className="text-[#1351AA]">MONITORING.</span>
+          </h1>
+        </div>
       </div>
 
-      <div className="bg-brand-navy border border-brand-charcoal p-4 max-w-md">
+      {/* 2. Search Filter */}
+      <div className="bg-black/40 border border-[#444343] p-4 max-w-md">
         <Input
           icon={Search}
-          placeholder="Search all content titles..."
+          placeholder="SEARCH CONTENT TITLES..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="bg-brand-charcoal text-white border-brand-charcoal"
         />
       </div>
 
-      <div className="bg-brand-navy border border-brand-charcoal overflow-x-auto">
-        <table className="w-full text-left text-xs text-brand-light font-sans">
-          <thead className="bg-black/30 border-b border-brand-charcoal uppercase font-mono text-[10px] text-brand-sage">
+      {/* 3. Content Table */}
+      <div className="bg-black/40 border border-[#444343] overflow-x-auto">
+        <table className="w-full text-left text-xs text-[#E3E2DE] font-sans">
+          <thead className="bg-black/60 border-b border-[#444343] uppercase font-mono text-[10px] text-[#7A7A7A]">
             <tr>
-              <th className="p-4">Content Title</th>
-              <th className="p-4">Type</th>
-              <th className="p-4">Duration</th>
-              <th className="p-4">Size</th>
-              <th className="p-4">Processing Status</th>
-              <th className="p-4">Created Date</th>
+              <th className="p-4">CONTENT TITLE</th>
+              <th className="p-4">TYPE</th>
+              <th className="p-4">DURATION</th>
+              <th className="p-4">SIZE</th>
+              <th className="p-4">STATUS</th>
+              <th className="p-4">CREATED</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-brand-charcoal">
-            {filtered.map((c) => (
-              <tr key={c.id} className="hover:bg-brand-charcoal/40 transition-colors">
-                <td className="p-4 font-bold text-white max-w-xs truncate">{c.title}</td>
-                <td className="p-4">
-                  <Badge variant={c.contentType === 'VIDEO' ? 'blue' : 'sage'}>{c.contentType}</Badge>
+          <tbody className="divide-y divide-[#444343]">
+            {filtered.map((c, idx) => (
+              <tr key={c.id} className="hover:bg-white/5 transition-colors">
+                <td className="p-4 font-bold text-[#E3E2DE] max-w-xs truncate uppercase flex items-center space-x-3">
+                  <span className="font-mono text-[#7A7A7A]">0{idx + 1}</span>
+                  <span className="truncate">{c.title}</span>
                 </td>
-                <td className="p-4 font-mono text-brand-sage">
-                  {c.mediaDurationSeconds ? formatTimecode(c.mediaDurationSeconds) : 'Document'}
+                <td className="p-4 font-mono font-bold uppercase text-[#1351AA]">
+                  {c.contentType}
                 </td>
-                <td className="p-4 font-mono">{formatBytes(c.fileSizeBytes)}</td>
+                <td className="p-4 font-mono text-[#7A7A7A]">
+                  {c.mediaDurationSeconds ? formatTimecode(c.mediaDurationSeconds) : 'DOCUMENT'}
+                </td>
+                <td className="p-4 font-mono text-[#E3E2DE]">{formatBytes(c.fileSizeBytes)}</td>
                 <td className="p-4">
-                  <span className="font-mono text-[10px] text-emerald-400 font-bold">
+                  <span className="font-mono text-[10px] text-[#1b6b36] font-bold uppercase">
                     {c.processingStatus}
                   </span>
                 </td>
-                <td className="p-4 font-mono text-brand-sage">{formatDate(c.createdAt)}</td>
+                <td className="p-4 font-mono text-[#7A7A7A]">{formatDate(c.createdAt)}</td>
               </tr>
             ))}
           </tbody>
@@ -85,3 +94,5 @@ export function AdminContentPage() {
     </div>
   );
 }
+
+export default AdminContentPage;

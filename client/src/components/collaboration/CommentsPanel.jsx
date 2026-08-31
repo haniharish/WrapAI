@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collaborationService } from '../../services/collaborationService.js';
-import { MessageSquare, Send, Reply, Trash2, Edit2, Check, X, Clock } from 'lucide-react';
-import { Button } from '../ui/Button.jsx';
+import { PosterButton } from '../ui/PosterButton.jsx';
+import { MessageSquare, Send, Reply, Trash2, Edit2, Clock } from 'lucide-react';
 import { formatDate } from '../../utils/formatters.js';
 
 export function CommentsPanel({ contentId, currentTimestamp = 0, onSeekTimestamp }) {
@@ -79,12 +79,12 @@ export function CommentsPanel({ contentId, currentTimestamp = 0, onSeekTimestamp
   const getReplies = (parentId) => comments.filter((c) => c.parentCommentId === parentId);
 
   return (
-    <div className="bg-brand-white border border-brand-charcoal/15 flex flex-col h-full font-sans text-xs">
-      <div className="p-3 border-b border-brand-charcoal/15 bg-brand-light/40 flex items-center justify-between">
+    <div className="bg-white/70 border border-[#C7C7C7] flex flex-col h-full font-sans text-xs">
+      <div className="p-4 border-b border-[#C7C7C7] bg-[#E3E2DE]/50 flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <MessageSquare className="w-4 h-4 text-brand-navy" />
-          <span className="font-display uppercase tracking-wider text-xs text-brand-navy">
-            Collaboration & Notes ({comments.length})
+          <MessageSquare className="w-4 h-4 text-[#1351AA]" />
+          <span className="font-mono uppercase font-bold tracking-wider text-xs text-[#141414]">
+            COLLABORATION NOTES ({comments.length})
           </span>
         </div>
       </div>
@@ -92,8 +92,8 @@ export function CommentsPanel({ contentId, currentTimestamp = 0, onSeekTimestamp
       {/* Comments List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-96">
         {comments.length === 0 ? (
-          <div className="p-8 text-center text-brand-taupe font-mono">
-            No notes yet. Add a timestamped comment below.
+          <div className="p-8 text-center text-[#7A7A7A] font-mono">
+            NO NOTES YET. ADD A TIMESTAMPTED COMMENT BELOW.
           </div>
         ) : (
           topLevelComments.map((c) => {
@@ -101,16 +101,16 @@ export function CommentsPanel({ contentId, currentTimestamp = 0, onSeekTimestamp
             const isOwn = (c.userId?.id || c.userId?._id) === currentUser?.id;
 
             return (
-              <div key={c.id || c._id} className="space-y-2 p-3 bg-brand-light/30 border border-brand-charcoal/10">
+              <div key={c.id || c._id} className="space-y-2 p-3 bg-white border border-[#C7C7C7]">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <span className="font-bold text-brand-navy">{c.userId?.fullName || 'User'}</span>
+                    <span className="font-bold uppercase text-[#141414]">{c.userId?.fullName || 'USER'}</span>
                     {c.timestampSeconds !== null && c.timestampSeconds !== undefined && (
                       <button
                         onClick={() => onSeekTimestamp && onSeekTimestamp(c.timestampSeconds)}
-                        className="font-mono text-[10px] bg-brand-navy/10 hover:bg-brand-navy/20 text-brand-navy px-1.5 py-0.2 flex items-center space-x-1"
+                        className="font-mono text-[10px] bg-[#E3E2DE] hover:bg-white text-[#141414] border border-[#C7C7C7] px-1.5 py-0.5 flex items-center space-x-1 cursor-pointer"
                       >
-                        <Clock className="w-2.5 h-2.5" />
+                        <Clock className="w-2.5 h-2.5 text-[#1351AA]" />
                         <span>
                           {Math.floor(c.timestampSeconds / 60)}:
                           {Math.floor(c.timestampSeconds % 60).toString().padStart(2, '0')}
@@ -118,7 +118,7 @@ export function CommentsPanel({ contentId, currentTimestamp = 0, onSeekTimestamp
                       </button>
                     )}
                   </div>
-                  <span className="text-[9px] font-mono text-brand-taupe">{formatDate(c.createdAt)}</span>
+                  <span className="text-[10px] font-mono text-[#7A7A7A]">{formatDate(c.createdAt)}</span>
                 </div>
 
                 {editingId === (c.id || c._id) ? (
@@ -126,26 +126,26 @@ export function CommentsPanel({ contentId, currentTimestamp = 0, onSeekTimestamp
                     <textarea
                       value={editText}
                       onChange={(e) => setEditText(e.target.value)}
-                      className="w-full p-2 border border-brand-charcoal/20 bg-brand-white focus:outline-none"
+                      className="w-full p-2 border border-[#C7C7C7] bg-[#E3E2DE] focus:outline-none font-mono"
                       rows={2}
                     />
                     <div className="flex space-x-2 justify-end">
-                      <Button variant="outline" size="sm" onClick={() => setEditingId(null)}>Cancel</Button>
-                      <Button variant="primary" size="sm" onClick={() => handleUpdate(c.id || c._id)}>Save</Button>
+                      <PosterButton variant="outline" size="sm" onClick={() => setEditingId(null)}>CANCEL</PosterButton>
+                      <PosterButton variant="primary" size="sm" onClick={() => handleUpdate(c.id || c._id)}>SAVE</PosterButton>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-xs text-brand-charcoal leading-relaxed">{c.text}</p>
+                  <p className="text-xs text-[#141414] leading-relaxed">{c.text}</p>
                 )}
 
                 {/* Actions */}
-                <div className="flex items-center space-x-3 pt-1 border-t border-brand-charcoal/5 text-[11px] font-mono">
+                <div className="flex items-center space-x-3 pt-1 border-t border-[#C7C7C7] text-[10px] font-mono">
                   <button
                     onClick={() => setReplyParentId(c.id || c._id)}
-                    className="text-brand-taupe hover:text-brand-navy flex items-center space-x-1"
+                    className="text-[#7A7A7A] hover:text-[#1351AA] flex items-center space-x-1 cursor-pointer"
                   >
                     <Reply className="w-3 h-3" />
-                    <span>Reply</span>
+                    <span>REPLY</span>
                   </button>
                   {isOwn && (
                     <>
@@ -154,17 +154,17 @@ export function CommentsPanel({ contentId, currentTimestamp = 0, onSeekTimestamp
                           setEditingId(c.id || c._id);
                           setEditText(c.text);
                         }}
-                        className="text-brand-taupe hover:text-brand-navy flex items-center space-x-1"
+                        className="text-[#7A7A7A] hover:text-[#1351AA] flex items-center space-x-1 cursor-pointer"
                       >
                         <Edit2 className="w-3 h-3" />
-                        <span>Edit</span>
+                        <span>EDIT</span>
                       </button>
                       <button
                         onClick={() => handleDelete(c.id || c._id)}
-                        className="text-brand-taupe hover:text-rose-600 flex items-center space-x-1"
+                        className="text-[#7A7A7A] hover:text-[#9e1c1c] flex items-center space-x-1 cursor-pointer"
                       >
                         <Trash2 className="w-3 h-3" />
-                        <span>Delete</span>
+                        <span>DELETE</span>
                       </button>
                     </>
                   )}
@@ -172,14 +172,14 @@ export function CommentsPanel({ contentId, currentTimestamp = 0, onSeekTimestamp
 
                 {/* Nested Replies */}
                 {replies.length > 0 && (
-                  <div className="pl-4 border-l-2 border-brand-charcoal/15 space-y-2 mt-2">
+                  <div className="pl-4 border-l-2 border-[#141414] space-y-2 mt-2">
                     {replies.map((rep) => (
-                      <div key={rep.id || rep._id} className="p-2 bg-brand-white border border-brand-charcoal/10">
+                      <div key={rep.id || rep._id} className="p-2 bg-[#E3E2DE]/50 border border-[#C7C7C7]">
                         <div className="flex items-center justify-between mb-1">
-                          <span className="font-bold text-brand-navy text-[11px]">{rep.userId?.fullName || 'User'}</span>
-                          <span className="text-[9px] font-mono text-brand-taupe">{formatDate(rep.createdAt)}</span>
+                          <span className="font-bold uppercase text-[#141414] text-[11px]">{rep.userId?.fullName || 'USER'}</span>
+                          <span className="text-[10px] font-mono text-[#7A7A7A]">{formatDate(rep.createdAt)}</span>
                         </div>
-                        <p className="text-[11px] text-brand-charcoal">{rep.text}</p>
+                        <p className="text-xs text-[#141414]">{rep.text}</p>
                       </div>
                     ))}
                   </div>
@@ -191,11 +191,11 @@ export function CommentsPanel({ contentId, currentTimestamp = 0, onSeekTimestamp
       </div>
 
       {/* Input Composer */}
-      <form onSubmit={handleCreateComment} className="p-3 border-t border-brand-charcoal/15 bg-brand-light/50 space-y-2">
+      <form onSubmit={handleCreateComment} className="p-4 border-t border-[#C7C7C7] bg-[#E3E2DE]/30 space-y-3">
         {replyParentId && (
-          <div className="flex items-center justify-between text-[10px] font-mono text-brand-navy bg-brand-sage/20 p-1 px-2">
-            <span>Replying to thread...</span>
-            <button onClick={() => setReplyParentId(null)} className="font-bold">×</button>
+          <div className="flex items-center justify-between text-[10px] font-mono text-[#1351AA] bg-[#1351AA]/10 p-1.5 px-2 border border-[#1351AA]">
+            <span>REPLYING TO THREAD...</span>
+            <button onClick={() => setReplyParentId(null)} className="font-bold cursor-pointer">×</button>
           </div>
         )}
 
@@ -203,26 +203,28 @@ export function CommentsPanel({ contentId, currentTimestamp = 0, onSeekTimestamp
           rows={2}
           value={newText}
           onChange={(e) => setNewText(e.target.value)}
-          placeholder="Leave a note or question on this moment..."
-          className="w-full p-2 border border-brand-charcoal/20 bg-brand-white focus:outline-none text-xs"
+          placeholder="Leave a note or discussion point..."
+          className="w-full p-2.5 border border-[#C7C7C7] bg-white focus:outline-none text-xs font-mono"
         />
 
         <div className="flex items-center justify-between">
-          <label className="flex items-center space-x-1.5 text-[10px] font-mono text-brand-taupe cursor-pointer">
+          <label className="flex items-center space-x-1.5 text-[10px] font-mono text-[#7A7A7A] cursor-pointer">
             <input
               type="checkbox"
               checked={attachTimestamp}
               onChange={(e) => setAttachTimestamp(e.target.checked)}
-              className="accent-brand-navy"
+              className="accent-[#1351AA]"
             />
-            <span>Attach timestamp ({Math.floor(currentTimestamp / 60)}:{Math.floor(currentTimestamp % 60).toString().padStart(2, '0')})</span>
+            <span>ATTACH TIMECODE ({Math.floor(currentTimestamp / 60)}:{Math.floor(currentTimestamp % 60).toString().padStart(2, '0')})</span>
           </label>
 
-          <Button variant="primary" size="sm" type="submit" icon={Send}>
-            Post Note
-          </Button>
+          <PosterButton variant="primary" size="sm" type="submit" icon={Send}>
+            POST NOTE
+          </PosterButton>
         </div>
       </form>
     </div>
   );
 }
+
+export default CommentsPanel;

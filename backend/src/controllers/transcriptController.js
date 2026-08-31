@@ -7,6 +7,11 @@ export const transcriptController = {
     sendSuccess(res, data, 'Transcript retrieved successfully');
   },
 
+  async getSpeakers(req, res) {
+    const speakers = await transcriptService.getSpeakers(req.params.contentId);
+    sendSuccess(res, speakers, 'Speakers retrieved successfully');
+  },
+
   async renameSpeaker(req, res) {
     const { speakerLabel, displayName } = req.body;
     const result = await transcriptService.updateSpeakerName(
@@ -16,5 +21,15 @@ export const transcriptController = {
       displayName
     );
     sendSuccess(res, result, 'Speaker renamed successfully across all segments');
+  },
+
+  async renameSpeakerById(req, res) {
+    const { displayName } = req.body;
+    const result = await transcriptService.updateSpeakerById(
+      req.params.id,
+      req.user.id,
+      displayName
+    );
+    sendSuccess(res, result, 'Speaker renamed successfully');
   }
 };

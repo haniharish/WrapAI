@@ -9,6 +9,7 @@ import intelligenceRoutes from './intelligence.routes.js';
 import reportRoutes from './report.routes.js';
 import chatRoutes from './chat.routes.js';
 import adminRoutes from './admin.routes.js';
+import speakerRoutes from './speaker.routes.js';
 
 const router = Router();
 
@@ -18,6 +19,7 @@ router.use('/users', userRoutes);
 router.use('/content', contentRoutes);
 router.use('/content', transcriptRoutes);
 router.use('/content', intelligenceRoutes);
+router.use('/speakers', speakerRoutes);
 router.use('/processing', processingRoutes);
 router.use('/reports', reportRoutes);
 router.use('/chat', chatRoutes);

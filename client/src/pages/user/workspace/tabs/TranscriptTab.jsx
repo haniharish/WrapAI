@@ -9,8 +9,8 @@ import { Select } from '../../../../components/ui/Select.jsx';
 import { Button } from '../../../../components/ui/Button.jsx';
 import { Modal } from '../../../../components/ui/Modal.jsx';
 import { LoadingState } from '../../../../components/common/LoadingState.jsx';
-import { Search, UserCheck, Edit2, Play, Copy, Check, FileText } from 'lucide-react';
-import { formatTimecode } from '../../../../utils/formatters.js';
+import { Search, UserCheck, Edit2, Play, Copy, Check, FileText, Users, Clock, PieChart } from 'lucide-react';
+import { formatTimecode, formatDuration } from '../../../../utils/formatters.js';
 
 export function TranscriptTab() {
   const { id } = useParams();
@@ -53,11 +53,18 @@ export function TranscriptTab() {
     e.preventDefault();
     if (!renameSpeaker || !newName.trim()) return;
     try {
-      await transcriptService.updateSpeakerName(
-        id,
-        renameSpeaker.speakerLabel || renameSpeaker.id,
-        newName.trim()
-      );
+      if (renameSpeaker.id || renameSpeaker._id) {
+        await transcriptService.updateSpeakerById(
+          renameSpeaker.id || renameSpeaker._id,
+          newName.trim()
+        );
+      } else {
+        await transcriptService.updateSpeakerName(
+          id,
+          renameSpeaker.speakerLabel,
+          newName.trim()
+        );
+      }
       setRenameSpeaker(null);
       await loadTranscript();
     } catch (err) {
@@ -71,9 +78,11 @@ export function TranscriptTab() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  if (isLoading) return <LoadingState message="Loading speech-to-text transcript..." />;
+  if (isLoading) return <LoadingState message="Loading speech-to-text transcript and speaker turns..." />;
 
-  const { speakers, segments } = data;
+  const { speakers, segments, transcript } = data;
+
+  const totalSpeakingDuration = speakers.reduce((acc, s) => acc + (s.totalSpeakingTimeSeconds || 0), 0) || transcript?.durationSeconds || 1;
 
   const filteredSegments = (segments || []).filter((seg) => {
     const matchesSearch = seg.text.toLowerCase().includes(searchTerm.toLowerCase());
@@ -95,9 +104,84 @@ export function TranscriptTab() {
         </div>
       )}
 
-      {/* Controls & Speaker Manifest Bar */}
+      {/* Speaker Statistics Manifest Card */}
+      <Card className="p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-2">
+            <Users className="w-4 h-4 text-brand-navy" />
+            <h3 className="font-mono text-xs uppercase tracking-wider font-bold text-brand-navy">
+              IDENTIFIED SPEAKERS ({speakers.length})
+            </h3>
+          </div>
+          <span className="text-[11px] font-mono text-brand-taupe">
+            Model: {transcript?.processingModel || 'faster-whisper-small'} &bull; Diarization: {transcript?.diarizationModel || 'pyannote.audio'}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          {speakers.length === 0 ? (
+            <div className="col-span-full py-3 text-xs font-mono text-brand-taupe italic">
+              Single speaker detected
+            </div>
+          ) : (
+            speakers.map((s, idx) => {
+              const spkDuration = s.totalSpeakingTimeSeconds || 0;
+              const spkPct = s.speakingPercentage || Math.round((spkDuration / totalSpeakingDuration) * 100);
+              const avatarBg = s.avatarColor || s.color || '#1B365D';
+
+              return (
+                <div
+                  key={s.id || s._id || idx}
+                  className="p-3 bg-brand-light border border-brand-charcoal/15 flex flex-col justify-between hover:border-brand-navy transition-colors"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span
+                        className="w-3 h-3 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: avatarBg }}
+                      />
+                      <div>
+                        <div className="font-display text-sm text-brand-navy font-bold leading-tight">
+                          {s.displayName || s.speakerDisplayName || s.speakerLabel}
+                        </div>
+                        <span className="text-[10px] font-mono text-brand-taupe">
+                          {s.speakerLabel}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setRenameSpeaker(s);
+                        setNewName(s.displayName || s.speakerDisplayName || '');
+                      }}
+                      className="p-1 text-brand-taupe hover:text-brand-navy"
+                      title="Rename Speaker"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="mt-3 pt-2 border-t border-brand-charcoal/10 flex items-center justify-between text-[11px] font-mono text-brand-charcoal/80">
+                    <span className="flex items-center">
+                      <Clock className="w-3 h-3 mr-1 text-brand-taupe" />
+                      {formatDuration(spkDuration)}
+                    </span>
+                    <span className="bg-brand-sage/40 px-1.5 py-0.5 font-bold text-brand-navy">
+                      {spkPct}% share
+                    </span>
+                    <span>{s.segmentCount || 0} turns</span>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </Card>
+
+      {/* Controls & Filter Bar */}
       <Card className="p-4 sm:p-5">
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-4">
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
           <div className="w-full md:w-80">
             <Input
               icon={Search}
@@ -115,42 +199,11 @@ export function TranscriptTab() {
                 { value: 'ALL', label: 'All Speakers' },
                 ...speakers.map((s) => ({
                   value: s.speakerLabel || s.id,
-                  label: s.displayName || s.name || s.speakerLabel
+                  label: `${s.displayName || s.speakerLabel} (${s.speakerLabel})`
                 }))
               ]}
             />
           </div>
-        </div>
-
-        {/* Detected Speakers Badges with Rename Action */}
-        <div className="pt-3 border-t border-brand-charcoal/10 flex flex-wrap items-center gap-3">
-          <span className="text-xs font-mono font-bold uppercase text-brand-taupe">IDENTIFIED SPEAKERS:</span>
-          {speakers.length === 0 ? (
-            <span className="text-xs font-mono text-brand-taupe italic">Default Speaker</span>
-          ) : (
-            speakers.map((s) => (
-              <div
-                key={s.id || s._id}
-                className="inline-flex items-center space-x-2 bg-brand-light border border-brand-charcoal/20 px-3 py-1 text-xs"
-              >
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color || '#1B365D' }} />
-                <span className="font-bold text-brand-navy">{s.displayName || s.name}</span>
-                <span className="text-[10px] font-mono text-brand-taupe">
-                  ({s.segmentCount || segments.length} turns)
-                </span>
-                <button
-                  onClick={() => {
-                    setRenameSpeaker(s);
-                    setNewName(s.displayName || s.name || '');
-                  }}
-                  className="text-brand-taupe hover:text-brand-navy ml-1"
-                  title="Rename Speaker"
-                >
-                  <Edit2 className="w-3 h-3" />
-                </button>
-              </div>
-            ))
-          )}
         </div>
       </Card>
 
@@ -164,9 +217,12 @@ export function TranscriptTab() {
         <div className="space-y-3">
           {filteredSegments.map((seg) => {
             const isActive = currentSeconds >= seg.startTime && currentSeconds <= seg.endTime;
+            const matchingSpeaker = speakers.find((s) => s.speakerLabel === seg.speakerLabel || (s.id && s.id === seg.speakerId));
+            const avatarBg = matchingSpeaker?.avatarColor || matchingSpeaker?.color || '#1B365D';
+
             return (
               <div
-                key={seg.id || seg._id}
+                key={seg.id || seg._id || seg.sequence}
                 className={`p-4 sm:p-5 border transition-all duration-200 ${
                   isActive
                     ? 'bg-brand-sage/20 border-brand-navy shadow-md translate-x-1'
@@ -183,17 +239,24 @@ export function TranscriptTab() {
                       <Play className="w-2.5 h-2.5 mr-1" />
                       {formatTimecode(seg.startTime)}
                     </button>
-                    <span className="font-display text-sm uppercase tracking-wide text-brand-navy">
-                      {seg.speakerDisplayName || seg.speakerName || 'Speaker 1'}
-                    </span>
+
+                    <div className="flex items-center space-x-1.5">
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: avatarBg }} />
+                      <span className="font-display text-sm uppercase tracking-wide text-brand-navy font-bold">
+                        {seg.speakerDisplayName || seg.speakerName || matchingSpeaker?.displayName || 'Speaker 1'}
+                      </span>
+                      <span className="text-[10px] font-mono text-brand-taupe">
+                        [{seg.speakerLabel || 'SPEAKER_00'}]
+                      </span>
+                    </div>
                   </div>
 
                   <button
-                    onClick={() => handleCopy(seg.id || seg._id, seg.text)}
+                    onClick={() => handleCopy(seg.id || seg._id || seg.sequence, seg.text)}
                     className="text-brand-taupe hover:text-brand-navy p-1"
                     title="Copy segment text"
                   >
-                    {copiedId === (seg.id || seg._id) ? (
+                    {copiedId === (seg.id || seg._id || seg.sequence) ? (
                       <Check className="w-3.5 h-3.5 text-emerald-700" />
                     ) : (
                       <Copy className="w-3.5 h-3.5" />
@@ -201,7 +264,9 @@ export function TranscriptTab() {
                   </button>
                 </div>
 
-                <p className="text-sm text-brand-navy leading-relaxed font-sans">{seg.text}</p>
+                <p className="text-sm text-brand-navy leading-relaxed font-sans pl-1 border-l-2 border-transparent">
+                  {seg.text}
+                </p>
               </div>
             );
           })}
@@ -218,12 +283,12 @@ export function TranscriptTab() {
           <p className="text-xs text-brand-taupe">
             Renaming{' '}
             <strong className="text-brand-navy">
-              {renameSpeaker?.displayName || renameSpeaker?.name}
+              {renameSpeaker?.displayName || renameSpeaker?.speakerLabel}
             </strong>{' '}
-            will update all associated transcript segments and compiled reports automatically.
+            will update all associated transcript segments and compiled reports automatically while preserving the original AI label (<code>{renameSpeaker?.speakerLabel}</code>).
           </p>
           <Input
-            label="Speaker Name"
+            label="Speaker Display Name"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="e.g. Rahul Sharma"
@@ -234,7 +299,7 @@ export function TranscriptTab() {
               Cancel
             </Button>
             <Button type="submit" variant="primary">
-              Save Speaker
+              Save Speaker Name
             </Button>
           </div>
         </form>

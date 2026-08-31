@@ -60,16 +60,17 @@ wrapAI/
 │   ├── phase-4-authentication.md
 │   ├── phase-5-file-upload.md
 │   ├── phase-6-processing.md
-│   └── phase-7-ai-service.md
+│   ├── phase-7-ai-service.md
+│   └── phase-8-speaker-diarization.md
 ├── ai-service/                  # Python FastAPI AI Microservice
 │   ├── app/
 │   │   ├── api/                 # FastAPI routes & security deps
 │   │   ├── core/                # Pydantic Settings & structured JSON logging
-│   │   ├── models/              # Pydantic schemas (TranscribeRequest, TranscribeResponse)
+│   │   ├── models/              # Pydantic schemas (TranscribeRequest, DiarizeRequest, SpeakerItem)
 │   │   ├── processors/          # FFmpeg media normalizer & temp file manager
-│   │   ├── services/            # Faster-Whisper Speech-to-Text inference engine
+│   │   ├── services/            # Faster-Whisper STT, pyannote Diarization & Alignment
 │   │   └── main.py              # Application entrypoint
-│   ├── tests/                   # Pytest test suite (8 tests)
+│   ├── tests/                   # Pytest test suite (13 tests)
 │   ├── requirements.txt
 │   ├── Dockerfile
 │   └── README.md
@@ -81,7 +82,7 @@ wrapAI/
 │   │   ├── routes/              # Central routing & RBAC route guards
 │   │   ├── services/            # Axios API client with automatic JWT & refresh interceptors
 │   │   ├── store/               # Redux Toolkit store (auth, UI, workspace)
-│   │   └── utils/               # Timecode formatters and validators
+│   │   └── utils/               # Timecode & duration formatters
 │   ├── package.json
 │   ├── tailwind.config.js
 │   └── vite.config.js
@@ -92,17 +93,17 @@ wrapAI/
 │   │   ├── controllers/         # Request/response controllers (Auth, Content, Processing, Admin, etc.)
 │   │   ├── database/            # Database seed CLI & migration routines
 │   │   ├── middlewares/         # Auth, RBAC, Ownership, Validation, Rate limiter, Upload multer
-│   │   ├── models/              # 12 Mongoose schemas (User, Content, ProcessingJob, Transcript, etc.)
+│   │   ├── models/              # 12 Mongoose schemas (User, Content, ProcessingJob, Transcript, Speaker, etc.)
 │   │   ├── queues/              # BullMQ queue definitions (contentProcessingQueue)
 │   │   ├── repositories/        # Database query abstractions & aggregations
 │   │   ├── routes/              # Modular Express routes
-│   │   ├── services/            # Pure business logic services (AIService, ProcessingQueue, Storage, etc.)
+│   │   ├── services/            # Business logic services (AIService, Transcript, Storage, etc.)
 │   │   ├── workers/             # Dedicated background worker processes
 │   │   ├── utils/               # ApiError, responseHandler, logger
 │   │   ├── validators/          # Input schema validation
 │   │   ├── app.js               # Express application configuration
 │   │   └── server.js            # Server listener & database bootstrap
-│   ├── tests/                   # 14 Jest + Supertest test suites (55 tests)
+│   ├── tests/                   # 15 Jest + Supertest test suites (60 tests)
 │   ├── package.json
 │   └── .env.example
 ├── docker-compose.yml           # Redis, AI Service, API Gateway, and Worker orchestration
@@ -120,7 +121,7 @@ wrapAI/
 - [x] **Phase 5**: File Upload & Object Storage (S3 / Storage Abstraction)
 - [x] **Phase 6**: Redis & BullMQ Processing Infrastructure
 - [x] **Phase 7**: Speech-to-Text (Faster-Whisper & Python AI Service)
-- [ ] **Phase 8**: Speaker Diarization & Timestamp Alignment (pyannote)
+- [x] **Phase 8**: Speaker Diarization & Timestamp Alignment (pyannote.audio)
 - [ ] **Phase 9**: Structured LLM Content Analysis
 - [ ] **Phase 10**: RAG & MongoDB Atlas Vector Search
 - [ ] **Phase 11**: Report Generation (PDF & DOCX)
@@ -128,5 +129,6 @@ wrapAI/
 - [ ] **Phase 13**: Admin Dashboard & Telemetry
 - [ ] **Phase 14**: Testing, Security & Optimization
 - [ ] **Phase 15**: Docker, CI/CD & Cloud Deployment
+
 
 

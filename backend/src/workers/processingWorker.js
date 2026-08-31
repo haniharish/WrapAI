@@ -12,7 +12,7 @@ import { logger } from '../utils/logger.js';
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
- * Execute real AI media preprocessing and Speech-to-Text pipeline for a single job
+ * Execute real AI media preprocessing, Speech-to-Text, and Speaker Diarization pipeline
  */
 export async function executeMockProcessingPipeline(jobRecord, bullJob = null) {
   const content = await contentRepository.findById(jobRecord.contentId);
@@ -66,7 +66,7 @@ export async function executeMockProcessingPipeline(jobRecord, bullJob = null) {
     throw new Error('Controlled Mock Pipeline Failure triggered for test verification');
   }
 
-  // Stage 3: TRANSCRIBING (40% - 75%)
+  // Stage 3: TRANSCRIBING (50%)
   jobRecord.stage = PROCESSING_STATUS.TRANSCRIBING;
   jobRecord.progress = 50;
   jobRecord.logs.push(`[${new Date().toISOString()}] Running Speech-to-Text transcription (Faster-Whisper AI engine)`);
@@ -77,8 +77,8 @@ export async function executeMockProcessingPipeline(jobRecord, bullJob = null) {
   let transcriptionResult;
 
   if (content.contentType === 'TEXT') {
-    // For pure text content, skip STT and create sequential transcript segments directly
-    logger.info(`Content ${content._id} is raw TEXT. Skipping STT and formatting direct segments.`);
+    // For pure text content, skip STT and diarization; format paragraphs directly
+    logger.info(`Content ${content._id} is raw TEXT. Formatting direct transcript segments.`);
     const rawText = content.rawText || '';
     const paragraphs = rawText.split(/\n+/).map((p) => p.trim()).filter(Boolean);
     const textSegments = [];
@@ -95,6 +95,8 @@ export async function executeMockProcessingPipeline(jobRecord, bullJob = null) {
         endTime: currentSec + segDuration,
         text: p,
         sequence: idx + 1,
+        speakerLabel: 'SPEAKER_00',
+        speakerDisplayName: 'Speaker 1',
         confidence: 1.0,
         words: []
       });
@@ -106,11 +108,24 @@ export async function executeMockProcessingPipeline(jobRecord, bullJob = null) {
       language: content.language || 'en',
       durationSeconds: currentSec,
       wordCount: rawText.split(/\s+/).filter(Boolean).length,
+      speakersCount: 1,
       processingModel: 'direct-text-parser',
+      diarizationModel: null,
+      speakers: [
+        {
+          speakerLabel: 'SPEAKER_00',
+          displayName: 'Speaker 1',
+          totalSpeakingTime: currentSec,
+          segmentCount: textSegments.length,
+          speakingPercentage: 100.0,
+          color: '#1B365D',
+          confidence: 1.0
+        }
+      ],
       segments: textSegments
     };
   } else {
-    // Audio / Video / Document / URL media transcription
+    // Audio / Video media transcription + diarization
     let mediaUrl = null;
     let localPath = null;
 
@@ -123,25 +138,42 @@ export async function executeMockProcessingPipeline(jobRecord, bullJob = null) {
       mediaUrl = content.sourceUrl;
     }
 
+    // Stage 4: DIARIZING (70%)
+    jobRecord.stage = PROCESSING_STATUS.DIARIZING;
+    jobRecord.progress = 70;
+    jobRecord.logs.push(`[${new Date().toISOString()}] Running pyannote speaker diarization & turn clustering`);
+    await jobRecord.save();
+    await contentRepository.updateById(content._id, { processingStatus: PROCESSING_STATUS.DIARIZING, processingProgress: 70 });
+    if (bullJob) await bullJob.updateProgress(70).catch(() => {});
+
     transcriptionResult = await aiService.requestTranscription({
       contentId: content._id.toString(),
       mediaUrl,
       localPath,
       contentType: content.contentType,
-      language: content.language || 'auto'
+      language: content.language || 'auto',
+      enableDiarization: true
     });
+
+    // Stage 5: ALIGNING_SPEAKERS (85%)
+    jobRecord.stage = PROCESSING_STATUS.ALIGNING_SPEAKERS;
+    jobRecord.progress = 85;
+    jobRecord.logs.push(`[${new Date().toISOString()}] Aligning ${transcriptionResult.segments?.length || 0} transcript segments with ${transcriptionResult.speakers?.length || 1} detected speakers`);
+    await jobRecord.save();
+    await contentRepository.updateById(content._id, { processingStatus: PROCESSING_STATUS.ALIGNING_SPEAKERS, processingProgress: 85 });
+    if (bullJob) await bullJob.updateProgress(85).catch(() => {});
   }
 
   // Check cancellation before writing to database
   check = await processingJobRepository.findById(jobRecord._id);
   if (check && check.status === 'CANCELLED') return;
 
-  // Stage 4: SAVING_TRANSCRIPT (90%)
-  jobRecord.stage = 'SAVING_TRANSCRIPT';
+  // Stage 6: SAVING_TRANSCRIPT (90%)
+  jobRecord.stage = PROCESSING_STATUS.SAVING_TRANSCRIPT;
   jobRecord.progress = 90;
-  jobRecord.logs.push(`[${new Date().toISOString()}] Persisting ${transcriptionResult.segments?.length || 0} transcript segments to MongoDB`);
+  jobRecord.logs.push(`[${new Date().toISOString()}] Persisting speaker-aware transcript and manifest to MongoDB Atlas`);
   await jobRecord.save();
-  await contentRepository.updateById(content._id, { processingStatus: 'SAVING_TRANSCRIPT', processingProgress: 90 });
+  await contentRepository.updateById(content._id, { processingStatus: PROCESSING_STATUS.SAVING_TRANSCRIPT, processingProgress: 90 });
   if (bullJob) await bullJob.updateProgress(90).catch(() => {});
 
   // Idempotency: Clean any existing transcript, speakers, and segments for this content
@@ -158,58 +190,84 @@ export async function executeMockProcessingPipeline(jobRecord, bullJob = null) {
     status: 'COMPLETED'
   });
 
-  // 2. Create Default Speaker record
-  const defaultSpeaker = await transcriptRepository.insertSpeakers([
-    {
-      contentId: content._id,
-      speakerLabel: 'SPEAKER_00',
-      displayName: 'Speaker 1',
-      color: '#1B365D',
-      segmentCount: transcriptionResult.segments?.length || 0
-    }
-  ]);
+  // 2. Create Speaker records in MongoDB
+  const rawSpeakers = transcriptionResult.speakers && transcriptionResult.speakers.length > 0
+    ? transcriptionResult.speakers
+    : [
+        {
+          speakerLabel: 'SPEAKER_00',
+          displayName: 'Speaker 1',
+          totalSpeakingTime: transcriptionResult.durationSeconds,
+          segmentCount: transcriptionResult.segments?.length || 0,
+          color: '#1B365D',
+          confidence: 1.0
+        }
+      ];
 
-  const speakerId = defaultSpeaker[0]?._id || null;
+  const speakerDocsToInsert = rawSpeakers.map((spk) => ({
+    contentId: content._id,
+    speakerLabel: spk.speakerLabel,
+    displayName: spk.displayName || 'Speaker 1',
+    totalSpeakingTimeSeconds: spk.totalSpeakingTime || 0,
+    segmentCount: spk.segmentCount || 0,
+    avatarColor: spk.color || '#1B365D',
+    confidence: spk.confidence || 0.92
+  }));
 
-  // 3. Create TranscriptSegment records
+  const insertedSpeakers = await transcriptRepository.insertSpeakers(speakerDocsToInsert);
+
+  // Build speaker map for ID linking: speakerLabel -> Speaker._id
+  const speakerMap = new Map();
+  insertedSpeakers.forEach((s) => {
+    speakerMap.set(s.speakerLabel, s._id);
+  });
+
+  // 3. Create TranscriptSegment records with linked speakerId
   if (transcriptionResult.segments && transcriptionResult.segments.length > 0) {
-    const segmentDocs = transcriptionResult.segments.map((seg) => ({
-      contentId: content._id,
-      transcriptId: transcriptDoc._id,
-      speakerId,
-      speakerLabel: 'SPEAKER_00',
-      speakerDisplayName: 'Speaker 1',
-      startTime: seg.startTime,
-      endTime: seg.endTime,
-      text: seg.text,
-      words: seg.words || [],
-      sequence: seg.sequence,
-      confidence: seg.confidence || 0.95
-    }));
+    const segmentDocs = transcriptionResult.segments.map((seg) => {
+      const spkLabel = seg.speakerLabel || 'SPEAKER_00';
+      const spkId = speakerMap.get(spkLabel) || insertedSpeakers[0]._id;
+      const spkName = seg.speakerDisplayName || 'Speaker 1';
+
+      return {
+        contentId: content._id,
+        transcriptId: transcriptDoc._id,
+        speakerId: spkId,
+        speakerLabel: spkLabel,
+        speakerDisplayName: spkName,
+        startTime: seg.startTime,
+        endTime: seg.endTime,
+        text: seg.text,
+        words: seg.words || [],
+        sequence: seg.sequence,
+        confidence: seg.confidence || 0.95
+      };
+    });
 
     await transcriptRepository.insertSegments(segmentDocs);
   }
 
-  // Stage 5: COMPLETED (100%)
+  // Stage 7: COMPLETED (100%)
   jobRecord.status = 'COMPLETED';
   jobRecord.stage = PROCESSING_STATUS.COMPLETED;
   jobRecord.progress = 100;
   jobRecord.completedAt = new Date();
-  jobRecord.logs.push(`[${new Date().toISOString()}] Transcript generated and persisted successfully. Status: COMPLETED`);
+  jobRecord.logs.push(`[${new Date().toISOString()}] Speaker-aware transcript persisted successfully with ${insertedSpeakers.length} speakers. Status: COMPLETED`);
   await jobRecord.save();
 
   await contentRepository.updateById(content._id, {
     processingStatus: PROCESSING_STATUS.COMPLETED,
     processingProgress: 100,
     mediaDurationSeconds: transcriptionResult.durationSeconds || 0,
+    speakersCount: insertedSpeakers.length,
     language: transcriptionResult.language || 'en'
   });
 
-  logger.info('Speech-to-text pipeline completed successfully', {
+  logger.info('Speaker-aware speech-to-text pipeline completed successfully', {
     jobId: jobRecord.jobId,
     contentId: content._id.toString(),
     segmentsCount: transcriptionResult.segments?.length || 0,
-    language: transcriptionResult.language
+    speakersCount: insertedSpeakers.length
   });
 
   return jobRecord;

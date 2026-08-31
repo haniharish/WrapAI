@@ -23,6 +23,13 @@ class Settings(BaseSettings):
     WHISPER_COMPUTE_TYPE: str = "int8"
     WHISPER_VAD_FILTER: bool = True
 
+    # Speaker Diarization Settings (pyannote.audio)
+    HF_TOKEN: Optional[str] = None
+    DIARIZATION_MODEL: str = "pyannote/speaker-diarization-3.1"
+    DIARIZATION_DEVICE: str = "cpu"
+    DIARIZATION_MIN_SPEAKERS: Optional[int] = None
+    DIARIZATION_MAX_SPEAKERS: Optional[int] = None
+
     # Resource Limits
     MAX_FILE_SIZE_BYTES: int = 524288000  # 500 MB
     MAX_AUDIO_DURATION_SECONDS: int = 14400  # 4 Hours

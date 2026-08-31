@@ -18,6 +18,22 @@ export function formatShortTime(seconds) {
   return `${pad(mins)}:${pad(remainingSecs)}`;
 }
 
+export function formatDuration(seconds) {
+  if (isNaN(seconds) || seconds === null || seconds <= 0) return '0s';
+  const sec = Math.round(seconds);
+  const hrs = Math.floor(sec / 3600);
+  const mins = Math.floor((sec % 3600) / 60);
+  const remainingSecs = sec % 60;
+
+  if (hrs > 0) {
+    return `${hrs}h ${mins}m ${remainingSecs}s`;
+  }
+  if (mins > 0) {
+    return `${mins}m ${remainingSecs}s`;
+  }
+  return `${remainingSecs}s`;
+}
+
 export function formatBytes(bytes, decimals = 1) {
   if (!bytes || bytes === 0) return '0 B';
   const k = 1024;

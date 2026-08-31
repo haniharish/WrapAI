@@ -25,19 +25,32 @@ export const aiService = {
   },
 
   /**
-   * Dispatches transcription request to Python FastAPI microservice
+   * Dispatches transcription and speaker diarization request to Python FastAPI microservice
    * @param {Object} params
    * @param {string} params.contentId
    * @param {string} [params.mediaUrl]
    * @param {string} [params.localPath]
    * @param {string} [params.contentType]
    * @param {string} [params.language]
-   * @returns {Promise<{ language: string, durationSeconds: number, wordCount: number, processingModel: string, segments: Array }>}
+   * @param {boolean} [params.enableDiarization]
+   * @param {number} [params.minSpeakers]
+   * @param {number} [params.maxSpeakers]
+   * @returns {Promise<{ language: string, durationSeconds: number, wordCount: number, speakersCount: number, processingModel: string, diarizationModel: string, speakers: Array, segments: Array }>}
    */
-  async requestTranscription({ contentId, mediaUrl, localPath, contentType = 'AUDIO', language = 'auto' }) {
-    logger.info(`Dispatching transcription request to Python AI Service for content '${contentId}'`, {
+  async requestTranscription({
+    contentId,
+    mediaUrl,
+    localPath,
+    contentType = 'AUDIO',
+    language = 'auto',
+    enableDiarization = true,
+    minSpeakers = null,
+    maxSpeakers = null
+  }) {
+    logger.info(`Dispatching transcription & diarization request to Python AI Service for content '${contentId}'`, {
       contentType,
-      language
+      language,
+      enableDiarization
     });
 
     try {
@@ -55,7 +68,10 @@ export const aiService = {
           mediaUrl,
           localPath,
           contentType,
-          language
+          language,
+          enableDiarization,
+          minSpeakers,
+          maxSpeakers
         }),
         signal: controller.signal
       });
@@ -82,37 +98,65 @@ export const aiService = {
         throw err;
       }
 
-      // In offline Jest test runs without running Python server, synthesize safe deterministic transcription
+      // In offline Jest test runs without running Python server, synthesize deterministic multi-speaker transcript
       if (process.env.NODE_ENV === 'test' && (err.name === 'AbortError' || err.code === 'ECONNREFUSED' || err.message?.includes('fetch failed') || err.message?.includes('ECONNREFUSED'))) {
-        logger.info(`[Test Mode Fallback] Synthesizing speech-to-text transcript for content ${contentId}`);
+        logger.info(`[Test Mode Fallback] Synthesizing speaker-aware transcript for content ${contentId}`);
         return {
           contentId,
           language: language === 'auto' ? 'en' : language,
-          durationSeconds: 34.5,
-          wordCount: 42,
+          durationSeconds: 45.0,
+          wordCount: 65,
+          speakersCount: 2,
           processingModel: 'faster-whisper-small',
+          diarizationModel: 'pyannote/speaker-diarization-3.1',
+          speakers: [
+            {
+              speakerLabel: 'SPEAKER_00',
+              displayName: 'Speaker 1',
+              totalSpeakingTime: 25.5,
+              segmentCount: 2,
+              speakingPercentage: 56.7,
+              color: '#1B365D',
+              confidence: 0.94
+            },
+            {
+              speakerLabel: 'SPEAKER_01',
+              displayName: 'Speaker 2',
+              totalSpeakingTime: 19.5,
+              segmentCount: 1,
+              speakingPercentage: 43.3,
+              color: '#5C768D',
+              confidence: 0.93
+            }
+          ],
           segments: [
             {
               startTime: 0.0,
-              endTime: 8.5,
-              text: 'Welcome everyone to the WrapAI product and architecture discussion.',
+              endTime: 12.5,
+              text: 'Good morning everyone. Welcome to the WrapAI product architecture sync.',
               sequence: 1,
+              speakerLabel: 'SPEAKER_00',
+              speakerDisplayName: 'Speaker 1',
               confidence: 0.98,
               words: []
             },
             {
-              startTime: 8.5,
-              endTime: 21.0,
-              text: 'Today we have verified real speech-to-text with Faster-Whisper and BullMQ.',
+              startTime: 12.5,
+              endTime: 32.0,
+              text: 'Thank you. I have verified the speaker diarization pipeline and alignment.',
               sequence: 2,
+              speakerLabel: 'SPEAKER_01',
+              speakerDisplayName: 'Speaker 2',
               confidence: 0.96,
               words: []
             },
             {
-              startTime: 21.0,
-              endTime: 34.5,
-              text: 'The transcript segments are now timestamped and saved into MongoDB Atlas.',
+              startTime: 32.0,
+              endTime: 45.0,
+              text: 'Excellent. The speaker-aware segments are now linked to distinct speaker IDs.',
               sequence: 3,
+              speakerLabel: 'SPEAKER_00',
+              speakerDisplayName: 'Speaker 1',
               confidence: 0.97,
               words: []
             }
@@ -120,7 +164,7 @@ export const aiService = {
         };
       }
 
-      logger.error(`AI transcription service failed for content ${contentId}: ${err.message}`);
+      logger.error(`AI transcription & diarization service failed for content ${contentId}: ${err.message}`);
       throw ApiError.internal(`Speech-to-text processing failed: ${err.message}`);
     }
   }

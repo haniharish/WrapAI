@@ -14,6 +14,12 @@ router.get(
   asyncHandler(transcriptController.getTranscript)
 );
 
+router.get(
+  '/:contentId/speakers',
+  checkOwnership((id) => contentRepository.findById(id), 'contentId'),
+  asyncHandler(transcriptController.getSpeakers)
+);
+
 router.patch(
   '/:contentId/speakers',
   checkOwnership((id) => contentRepository.findById(id), 'contentId'),

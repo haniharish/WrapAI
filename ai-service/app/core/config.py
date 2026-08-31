@@ -30,6 +30,14 @@ class Settings(BaseSettings):
     DIARIZATION_MIN_SPEAKERS: Optional[int] = None
     DIARIZATION_MAX_SPEAKERS: Optional[int] = None
 
+    # LLM Content Intelligence Settings
+    LLM_PROVIDER: str = "heuristic"  # 'gemini', 'openai', or 'heuristic'
+    LLM_MODEL: str = "gemini-2.5-flash"
+    LLM_API_KEY: Optional[str] = None
+    LLM_TEMPERATURE: float = 0.2
+    LLM_MAX_OUTPUT_TOKENS: int = 4096
+    MAX_TRANSCRIPT_TOKENS_PER_CHUNK: int = 3000
+
     # Resource Limits
     MAX_FILE_SIZE_BYTES: int = 524288000  # 500 MB
     MAX_AUDIO_DURATION_SECONDS: int = 14400  # 4 Hours

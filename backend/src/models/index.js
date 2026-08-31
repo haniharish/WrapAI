@@ -6,6 +6,7 @@ export { Speaker } from './Speaker.js';
 export { Topic } from './Topic.js';
 export { Decision } from './Decision.js';
 export { ActionItem } from './ActionItem.js';
+export { Analysis } from './Analysis.js';
 export { Report } from './Report.js';
 export { ChatSession } from './ChatSession.js';
 export { ChatMessage } from './ChatMessage.js';

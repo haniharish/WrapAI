@@ -24,11 +24,12 @@ describe('Phase 3 Intelligence & Transcript APIs', () => {
     });
     userToken = res.body.data.token;
 
-    // Get Rahul's content
+    // Get Rahul's seeded completed content
     const contentRes = await request(app)
       .get('/api/v1/content')
       .set('Authorization', `Bearer ${userToken}`);
-    contentId = contentRes.body.data[0].id;
+    const completedContent = contentRes.body.data.find((c) => c.processingStatus === 'COMPLETED');
+    contentId = completedContent ? completedContent.id : contentRes.body.data[0].id;
   });
 
   it('should retrieve full transcript with speakers and diarized segments', async () => {

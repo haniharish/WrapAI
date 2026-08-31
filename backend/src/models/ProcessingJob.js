@@ -23,7 +23,7 @@ const processingJobSchema = new mongoose.Schema(
     },
     jobType: {
       type: String,
-      enum: ['FULL_PIPELINE', 'AUDIO_EXTRACTION', 'TRANSCRIPTION', 'DIARIZATION', 'LLM_INTELLIGENCE', 'REPORT_GENERATION'],
+      enum: ['FULL_PIPELINE', 'AUDIO_EXTRACTION', 'TRANSCRIPTION', 'DIARIZATION', 'LLM_INTELLIGENCE', 'REANALYSIS', 'REPORT_GENERATION'],
       default: 'FULL_PIPELINE'
     },
     stage: {

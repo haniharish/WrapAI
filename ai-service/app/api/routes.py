@@ -10,6 +10,8 @@ from app.models.schemas import (
     DiarizeRequest,
     DiarizeResponse,
     DiarizeResponseData,
+    AnalyzeRequest,
+    AnalyzeResponse,
     HealthResponse
 )
 from app.api.deps import verify_internal_api_key
@@ -18,6 +20,7 @@ from app.processors.media_processor import MediaProcessor
 from app.services.stt_service import SpeechToTextService
 from app.services.diarization_service import SpeakerDiarizationService
 from app.services.alignment_service import TranscriptSpeakerAlignmentService
+from app.services.analysis_service import ContentAnalysisService
 
 router = APIRouter()
 
@@ -25,7 +28,7 @@ router = APIRouter()
 @router.get("/health", response_model=HealthResponse, tags=["System"])
 async def health_check():
     """
-    Public health check endpoint exposing service state, active Whisper and Diarization configurations.
+    Public health check endpoint exposing service state, active Whisper, Diarization, and LLM configurations.
     """
     return HealthResponse(
         status="ok",
@@ -33,6 +36,8 @@ async def health_check():
         environment=settings.NODE_ENV,
         whisperModel=settings.WHISPER_MODEL_SIZE,
         diarizationModel=settings.DIARIZATION_MODEL,
+        llmProvider=settings.LLM_PROVIDER,
+        llmModel=settings.LLM_MODEL,
         device=settings.WHISPER_DEVICE,
         computeType=settings.WHISPER_COMPUTE_TYPE
     )
@@ -211,7 +216,6 @@ async def diarize_media_standalone(request: DiarizeRequest):
             max_speakers=request.maxSpeakers
         )
 
-        # Generate speaker summary items from turns
         from app.models.schemas import TranscriptSegmentItem
         dummy_segments = [
             TranscriptSegmentItem(
@@ -235,4 +239,43 @@ async def diarize_media_standalone(request: DiarizeRequest):
                 turns=speaker_turns,
                 speakers=speaker_items
             )
+        )
+
+
+@router.post(
+    "/internal/v1/analyze",
+    response_model=AnalyzeResponse,
+    dependencies=[Depends(verify_internal_api_key)],
+    tags=["LLM Content Intelligence"]
+)
+async def analyze_transcript_content(request: AnalyzeRequest):
+    """
+    Protected internal endpoint generating structured LLM intelligence
+    (Summary, Topics, Key Points, Decisions, Action Items, Questions, Highlights)
+    from speaker-aware transcripts.
+    """
+    if not request.contentId:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "INVALID_REQUEST", "message": "contentId is required"}
+        )
+
+    if not request.segments or len(request.segments) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "EMPTY_TRANSCRIPT", "message": "Transcript segments cannot be empty"}
+        )
+
+    try:
+        analysis_data = await ContentAnalysisService.analyze_transcript(request)
+        return AnalyzeResponse(
+            success=True,
+            message="Content intelligence analysis generated successfully",
+            data=analysis_data
+        )
+    except Exception as err:
+        logger.error(f"LLM content analysis failed for {request.contentId}: {str(err)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"code": "ANALYSIS_FAILED", "message": str(err)}
         )

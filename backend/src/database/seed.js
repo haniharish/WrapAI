@@ -11,6 +11,7 @@ import {
   Topic,
   Decision,
   ActionItem,
+  Analysis,
   Report,
   ChatSession,
   ChatMessage,
@@ -37,6 +38,7 @@ export async function seedDatabase(customUri = null) {
     Topic.deleteMany({}),
     Decision.deleteMany({}),
     ActionItem.deleteMany({}),
+    Analysis.deleteMany({}),
     Report.deleteMany({}),
     ChatSession.deleteMany({}),
     ChatMessage.deleteMany({}),
@@ -301,7 +303,7 @@ export async function seedDatabase(customUri = null) {
 
   // 8. Create Action Items
   logger.info('Seeding action items...');
-  await ActionItem.insertMany([
+  const seededActionItems = await ActionItem.insertMany([
     {
       contentId: content1._id,
       task: 'Implement Mongoose schemas and compound indexes for transcript segments.',
@@ -323,6 +325,100 @@ export async function seedDatabase(customUri = null) {
       timestamp: 290
     }
   ]);
+
+  // 8.5. Create Analysis
+  logger.info('Seeding analysis...');
+  await Analysis.create({
+    contentId: content1._id,
+    transcriptId: transcript._id,
+    version: 1,
+    contentCategory: 'MEETING',
+    summary: {
+      short: 'The Q3 Architecture Sync finalized database choices, vector search strategy, and background worker queue topologies.',
+      executive: 'Comprehensive technical review regarding WrapAI data architecture. The team approved native Atlas vector search and isolated BullMQ pipelines.',
+      overview: 'Quarterly architecture alignment session.',
+      keyTakeaway: 'Production rollout approved with isolated BullMQ workers.'
+    },
+    topics: [
+      {
+        title: '1. Welcome & Meeting Objectives',
+        summary: 'Rahul outlined goals: database scaling, queue topology, and timestamp synchronization.',
+        startTime: 0,
+        endTime: 92,
+        sequence: 1,
+        keyTakeaway: 'Focus on production readiness.'
+      },
+      {
+        title: '2. MongoDB Atlas & Vector Search Architecture',
+        summary: 'Sarah presented data models and multi-tenant security rules for vector indexing.',
+        startTime: 93,
+        endTime: 215,
+        sequence: 2,
+        keyTakeaway: 'Atlas Vector Search adopted unanimously.'
+      }
+    ],
+    keyPoints: [
+      {
+        text: 'Atlas Vector Search selected over external vector databases.',
+        importance: 'HIGH',
+        timestamp: 165,
+        speakerName: 'Sarah Jenkins',
+        category: 'Database'
+      },
+      {
+        text: 'BullMQ and Redis provide isolated async task workers.',
+        importance: 'HIGH',
+        timestamp: 310,
+        speakerName: 'Rahul Sharma',
+        category: 'Infrastructure'
+      }
+    ],
+    decisions: [
+      {
+        title: 'Adopt MongoDB Atlas for Native Vector Search',
+        description: 'Unified Mongoose models and vector search in Atlas without external vector database dependencies.',
+        timestamp: 165,
+        category: 'Database',
+        agreedByNames: ['Rahul Sharma', 'Sarah Jenkins', 'Alexandre Dubois']
+      }
+    ],
+    actionItems: [
+      {
+        id: seededActionItems[0]._id.toString(),
+        task: 'Implement Mongoose schemas and compound indexes for transcript segments.',
+        ownerName: 'Rahul Sharma',
+        deadlineRaw: 'Friday EOD',
+        status: 'IN_PROGRESS',
+        timestamp: 185
+      }
+    ],
+    questions: [
+      {
+        question: 'Will Atlas Vector Search scale with concurrent users?',
+        askedBy: 'Rahul Sharma',
+        timestamp: 120,
+        answered: true
+      }
+    ],
+    highlights: [
+      {
+        title: 'Atlas Vector Architecture Finalized',
+        description: 'Unanimous consensus on MongoDB Atlas Vector Search.',
+        timestamp: 165,
+        importance: 'HIGH'
+      }
+    ],
+    llmProvider: 'heuristic',
+    llmModel: 'gemini-2.5-flash',
+    promptVersion: 'v1.0',
+    tokenUsage: {
+      inputTokens: 1250,
+      outputTokens: 820,
+      totalTokens: 2070,
+      estimatedCostUsd: 0.001
+    },
+    status: 'COMPLETED'
+  });
 
   // 9. Create Report
   logger.info('Seeding reports...');

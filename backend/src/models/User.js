@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Password hash is required'],
       minlength: 6,
-      select: false // Excluded from query results by default
+      select: false
     },
     role: {
       type: String,
@@ -52,7 +52,7 @@ const userSchema = new mongoose.Schema(
     },
     preferences: {
       type: mongoose.Schema.Types.Mixed,
-      default: { theme: 'light', emailNotifications: true }
+      default: { theme: 'light', emailNotifications: true, autoSummarize: true }
     }
   },
   {
@@ -72,12 +72,10 @@ const userSchema = new mongoose.Schema(
 userSchema.index({ role: 1 });
 userSchema.index({ status: 1 });
 
-// Instance method to compare plain password with hash
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.passwordHash);
 };
 
-// Static helper to hash passwords
 userSchema.statics.hashPassword = async function (plainPassword) {
   const salt = await bcrypt.genSalt(12);
   return bcrypt.hash(plainPassword, salt);

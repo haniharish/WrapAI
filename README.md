@@ -8,7 +8,8 @@ WrapAI is an AI-powered content intelligence platform that transforms multi-moda
 ## 🚀 Completed Phases
 - **Phase 0: Architecture & System Blueprint** (41 architectural sections + System Blueprint)
 - **Phase 1: Frontend UI & React Foundation** (React 18, Tailwind CSS, Redux Toolkit, 9 Workspace Tabs, User & Admin Dashboards)
-- **Phase 2: Node.js + Express Backend Foundation** (Layered architecture, JWT Auth, RBAC, Ownership guards, Mongoose models, Swagger docs, Jest & Supertest integration tests)
+- **Phase 2: Node.js + Express Backend Foundation** (Layered architecture, JWT Auth, RBAC, Ownership guards, Swagger docs, Jest & Supertest integration tests)
+- **Phase 3: MongoDB Atlas Database & Schemas** (12 production Mongoose models, referenced transcript streams, diarization cascade, intelligence models, aggregation pipelines, development seed CLI)
 
 ---
 
@@ -27,6 +28,7 @@ Runs on [http://localhost:5173/](http://localhost:5173/).
 cd backend
 npm install
 cp .env.example .env
+npm run seed     # Seed realistic development database
 npm run dev
 ```
 Runs on [http://localhost:5000/api/v1](http://localhost:5000/api/v1).  
@@ -45,7 +47,8 @@ npm test
 wrapAI/
 ├── docs/                        # Complete Architecture & System Blueprint
 │   ├── WRAPAI_ARCHITECTURE_BLUEPRINT.md
-│   └── phase-2-backend.md
+│   ├── phase-2-backend.md
+│   └── phase-3-database.md
 ├── client/                      # React 18 Single Page Application
 │   ├── src/
 │   │   ├── components/          # Reusable UI, Layout, Media, and Common components
@@ -64,16 +67,17 @@ wrapAI/
 │   │   ├── config/              # DB connection, env config, Swagger specs
 │   │   ├── constants/           # Roles, status codes, content types
 │   │   ├── controllers/         # Request/response controllers
+│   │   ├── database/            # Database seed CLI & migration routines
 │   │   ├── middlewares/         # Auth, RBAC, Ownership, Validation, Rate limiter, Errors
-│   │   ├── models/              # User, Content, Report Mongoose schemas
-│   │   ├── repositories/        # Database query abstractions
+│   │   ├── models/              # 12 Mongoose schemas (User, Content, Transcript, Segment, Speaker, etc.)
+│   │   ├── repositories/        # Database query abstractions & aggregations
 │   │   ├── routes/              # Modular Express routes
 │   │   ├── services/            # Pure business logic services
 │   │   ├── utils/               # ApiError, responseHandler, logger
 │   │   ├── validators/          # Input schema validation
 │   │   ├── app.js               # Express application configuration
 │   │   └── server.js            # Server listener & database bootstrap
-│   ├── tests/                   # Jest + Supertest test suites
+│   ├── tests/                   # 10 Jest + Supertest test suites (32 tests)
 │   ├── package.json
 │   └── .env.example
 └── README.md
@@ -85,7 +89,7 @@ wrapAI/
 - [x] **Phase 0**: Architecture & System Blueprint
 - [x] **Phase 1**: Frontend UI & React Foundation
 - [x] **Phase 2**: Node.js + Express Backend Foundation
-- [ ] **Phase 3**: MongoDB Atlas Database & Schemas
+- [x] **Phase 3**: MongoDB Atlas Database & Schemas
 - [ ] **Phase 4**: Authentication & RBAC (JWT / bcrypt)
 - [ ] **Phase 5**: File Upload & Object Storage (S3 / Cloudinary)
 - [ ] **Phase 6**: Redis & BullMQ Processing Infrastructure

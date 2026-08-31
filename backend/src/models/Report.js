@@ -33,6 +33,10 @@ const reportSchema = new mongoose.Schema(
       type: String,
       default: ''
     },
+    markdownContent: {
+      type: String,
+      default: ''
+    },
     pdfStorageKey: {
       type: String,
       default: null
@@ -48,7 +52,11 @@ const reportSchema = new mongoose.Schema(
     },
     sections: {
       type: [String],
-      default: ['Executive Summary', 'Key Decisions', 'Action Items', 'Topics']
+      default: ['Executive Summary', 'Key Decisions', 'Action Items', 'Topics', 'Diarized Minutes']
+    },
+    version: {
+      type: Number,
+      default: 1
     }
   },
   {
@@ -67,5 +75,6 @@ const reportSchema = new mongoose.Schema(
 );
 
 reportSchema.index({ userId: 1, createdAt: -1 });
+reportSchema.index({ contentId: 1, createdAt: -1 });
 
 export const Report = mongoose.model('Report', reportSchema);

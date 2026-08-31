@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-brand-light text-brand-navy font-sans antialiased overflow-x-hidden;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    letter-spacing: 0.02em;
+  }
+}
+
+/* Custom minimal scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #fafafa;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #b7c6c2;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #302b2f;
+}
+
+/* Crosshair precision cursor for editorial sections */
+.cursor-cross {
+  cursor: crosshair;
+}
+
+/* Custom border styling */
+.border-fine {
+  border-width: 1px;
+}

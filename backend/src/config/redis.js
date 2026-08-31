@@ -53,6 +53,11 @@ export function getSharedRedisClient() {
   return sharedRedisConnection;
 }
 
+export function getRedisClient() {
+  return getSharedRedisClient();
+}
+
+
 export async function closeRedisConnections() {
   if (sharedRedisConnection) {
     await sharedRedisConnection.quit().catch(() => {});

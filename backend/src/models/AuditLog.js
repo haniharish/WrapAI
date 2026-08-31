@@ -8,6 +8,12 @@ const auditLogSchema = new mongoose.Schema(
       default: null,
       index: true
     },
+    workspaceId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Workspace',
+      default: null,
+      index: true
+    },
     action: {
       type: String,
       required: true,
@@ -22,18 +28,42 @@ const auditLogSchema = new mongoose.Schema(
         'SPEAKER_RENAMED',
         'ACTION_ITEM_UPDATED',
         'REPORT_GENERATED',
+        'REPORT_SHARED',
+        'REPORT_DELETED',
         'CHAT_MESSAGE_SENT',
         'ADMIN_USER_STATUS_CHANGE',
         'ADMIN_JOB_RETRY',
         'PROCESSING_JOB_ENQUEUED',
         'PROCESSING_JOB_RETRIED',
-        'PROCESSING_JOB_CANCELLED'
+        'PROCESSING_JOB_CANCELLED',
+        'WORKSPACE_CREATED',
+        'WORKSPACE_UPDATED',
+        'WORKSPACE_DELETED',
+        'MEMBER_INVITED',
+        'MEMBER_JOINED',
+        'MEMBER_REMOVED',
+        'ROLE_CHANGED',
+        'COMMENT_CREATED',
+        'COMMENT_DELETED'
       ]
     },
     resourceType: {
       type: String,
       required: true,
-      enum: ['USER', 'CONTENT', 'TRANSCRIPT', 'REPORT', 'CHAT', 'JOB', 'PROCESSING_JOB', 'SYSTEM']
+      enum: [
+        'USER',
+        'CONTENT',
+        'TRANSCRIPT',
+        'REPORT',
+        'CHAT',
+        'JOB',
+        'PROCESSING_JOB',
+        'SYSTEM',
+        'WORKSPACE',
+        'WORKSPACE_MEMBER',
+        'WORKSPACE_INVITATION',
+        'COMMENT'
+      ]
     },
     resourceId: {
       type: String,
@@ -68,6 +98,7 @@ const auditLogSchema = new mongoose.Schema(
 );
 
 auditLogSchema.index({ userId: 1, createdAt: -1 });
+auditLogSchema.index({ workspaceId: 1, createdAt: -1 });
 auditLogSchema.index({ action: 1, createdAt: -1 });
 
 export const AuditLog = mongoose.model('AuditLog', auditLogSchema);

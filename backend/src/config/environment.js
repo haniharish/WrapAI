@@ -54,8 +54,16 @@ export const config = {
     windowMs: 15 * 60 * 1000,
     max: 20
   },
+  reports: {
+    queueName: process.env.REPORT_QUEUE_NAME || 'report-generation',
+    concurrency: parseInt(process.env.REPORT_WORKER_CONCURRENCY, 10) || 2,
+    storagePrefix: process.env.REPORT_STORAGE_PREFIX || 'reports',
+    maxFileSize: parseInt(process.env.REPORT_MAX_FILE_SIZE, 10) || 25 * 1024 * 1024,
+    shareExpirationDays: parseInt(process.env.REPORT_SHARE_EXPIRATION_DAYS, 10) || 7
+  },
   cors: {
     origin: process.env.CLIENT_URL || 'http://localhost:5173',
     credentials: true
   }
 };
+

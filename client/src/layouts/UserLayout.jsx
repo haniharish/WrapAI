@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleRole, logout } from '../store/slices/authSlice.js';
@@ -11,11 +11,16 @@ import {
   LogOut,
   Shield,
   User,
-  Sparkles
+  Sparkles,
+  Users,
+  Search
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Button } from '../components/ui/Button.jsx';
 import { ToastContainer } from '../components/ui/Toast.jsx';
+import { WorkspaceSwitcher } from '../components/workspace/WorkspaceSwitcher.jsx';
+import { NotificationBell } from '../components/notifications/NotificationBell.jsx';
+import { GlobalSearchModal } from '../components/search/GlobalSearchModal.jsx';
 
 export function UserLayout() {
   const user = useSelector((state) => state.auth.user);
@@ -23,10 +28,13 @@ export function UserLayout() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
   const navItems = [
     { to: '/dashboard', label: 'Overview', icon: LayoutDashboard },
     { to: '/content', label: 'My Content', icon: FolderOpen },
     { to: '/reports', label: 'Reports', icon: FileText },
+    { to: '/workspace/settings', label: 'Team Space', icon: Users },
     { to: '/settings', label: 'Settings', icon: Settings }
   ];
 
@@ -50,8 +58,13 @@ export function UserLayout() {
             </Link>
           </div>
 
+          {/* Workspace Switcher */}
+          <div className="p-3 border-b border-brand-charcoal/10">
+            <WorkspaceSwitcher />
+          </div>
+
           {/* Primary Action Button */}
-          <div className="p-4 border-b border-brand-charcoal/10">
+          <div className="p-3 border-b border-brand-charcoal/10">
             <Link to="/upload">
               <Button variant="primary" size="md" className="w-full" icon={UploadCloud}>
                 Upload Content
@@ -60,7 +73,7 @@ export function UserLayout() {
           </div>
 
           {/* Navigation Links */}
-          <nav className="p-4 space-y-1.5">
+          <nav className="p-3 space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -69,7 +82,7 @@ export function UserLayout() {
                   to={item.to}
                   className={({ isActive }) =>
                     clsx(
-                      'flex items-center px-4 py-3 text-xs font-bold uppercase tracking-wider transition-all duration-200 border',
+                      'flex items-center px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all duration-200 border',
                       isActive
                         ? 'bg-brand-navy text-brand-white border-brand-navy shadow-sm'
                         : 'bg-transparent text-brand-charcoal border-transparent hover:bg-brand-sage/20 hover:text-brand-navy'
@@ -100,7 +113,6 @@ export function UserLayout() {
             </div>
           </div>
 
-          {/* Quick User/Admin Role Toggle for easy Phase 1 evaluation */}
           <div className="flex items-center justify-between pt-2 border-t border-brand-charcoal/10">
             <button
               onClick={() => dispatch(toggleRole())}
@@ -132,12 +144,19 @@ export function UserLayout() {
       {/* Main Workspace Canvas */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         <header className="h-16 bg-brand-white border-b border-brand-charcoal/15 px-8 flex items-center justify-between sticky top-0 z-20">
+          {/* Global Search Bar Trigger */}
+          <button
+            onClick={() => setIsSearchOpen(true)}
+            className="flex items-center space-x-2 px-3 py-1.5 bg-brand-light border border-brand-charcoal/15 text-xs text-brand-taupe hover:border-brand-charcoal/30 transition-all font-mono"
+          >
+            <Search className="w-3.5 h-3.5" />
+            <span>Search WrapAI (Ctrl+K)...</span>
+          </button>
+
+          {/* Action Tools & Notifications */}
           <div className="flex items-center space-x-3">
-            <span className="text-xs font-bold uppercase tracking-widest text-brand-taupe">WrapAI Platform</span>
-            <span className="text-brand-taupe">/</span>
-            <span className="text-xs font-bold uppercase tracking-widest text-brand-navy">User Workspace</span>
-          </div>
-          <div className="flex items-center space-x-3">
+            <NotificationBell />
+
             <Link to="/upload">
               <Button variant="secondary" size="sm" icon={Sparkles}>
                 Quick Ingest
@@ -150,6 +169,9 @@ export function UserLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Global Semantic Search Modal */}
+      <GlobalSearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 
       <ToastContainer />
     </div>

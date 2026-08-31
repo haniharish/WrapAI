@@ -1,5 +1,10 @@
 import mongoose from 'mongoose';
-import { REPORT_TYPES } from '../constants/contentTypes.js';
+import {
+  REPORT_TYPES,
+  REPORT_FORMATS,
+  REPORT_DETAIL_LEVELS,
+  REPORT_STATUS
+} from '../constants/contentTypes.js';
 
 const reportSchema = new mongoose.Schema(
   {
@@ -15,6 +20,16 @@ const reportSchema = new mongoose.Schema(
       required: true,
       index: true
     },
+    analysisId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Analysis',
+      default: null
+    },
+    transcriptId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Transcript',
+      default: null
+    },
     title: {
       type: String,
       required: [true, 'Report title is required'],
@@ -27,7 +42,29 @@ const reportSchema = new mongoose.Schema(
     reportType: {
       type: String,
       enum: Object.values(REPORT_TYPES),
-      default: REPORT_TYPES.MEETING_MINUTES
+      default: REPORT_TYPES.MEETING_REPORT
+    },
+    template: {
+      type: String,
+      default: 'MEETING'
+    },
+    detailLevel: {
+      type: String,
+      enum: Object.values(REPORT_DETAIL_LEVELS),
+      default: REPORT_DETAIL_LEVELS.STANDARD
+    },
+    format: {
+      type: String,
+      enum: Object.values(REPORT_FORMATS),
+      default: REPORT_FORMATS.PDF
+    },
+    sections: {
+      type: [String],
+      default: ['SUMMARY', 'TOPICS', 'DECISIONS', 'ACTION_ITEMS', 'HIGHLIGHTS', 'PARTICIPANTS']
+    },
+    structuredData: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null
     },
     htmlContent: {
       type: String,
@@ -37,6 +74,10 @@ const reportSchema = new mongoose.Schema(
       type: String,
       default: ''
     },
+    storageKey: {
+      type: String,
+      default: null
+    },
     pdfStorageKey: {
       type: String,
       default: null
@@ -45,18 +86,53 @@ const reportSchema = new mongoose.Schema(
       type: String,
       default: null
     },
+    fileSizeBytes: {
+      type: Number,
+      default: 0
+    },
+    mimeType: {
+      type: String,
+      default: 'application/pdf'
+    },
     status: {
       type: String,
-      enum: ['DRAFT', 'GENERATED', 'VIEWED'],
-      default: 'GENERATED'
+      enum: ['QUEUED', 'GENERATING', 'COMPLETED', 'FAILED', 'DRAFT', 'GENERATED', 'VIEWED'],
+      default: 'COMPLETED'
     },
-    sections: {
-      type: [String],
-      default: ['Executive Summary', 'Key Decisions', 'Action Items', 'Topics', 'Diarized Minutes']
+    errorMessage: {
+      type: String,
+      default: null
     },
     version: {
       type: Number,
       default: 1
+    },
+    analysisVersion: {
+      type: Number,
+      default: 1
+    },
+    transcriptVersion: {
+      type: Number,
+      default: 1
+    },
+    // Secure Sharing Fields
+    isShared: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
+    shareToken: {
+      type: String,
+      default: null
+    },
+
+    shareExpiresAt: {
+      type: Date,
+      default: null
+    },
+    generatedAt: {
+      type: Date,
+      default: Date.now
     }
   },
   {
@@ -66,6 +142,8 @@ const reportSchema = new mongoose.Schema(
         ret.id = ret._id.toString();
         ret.contentId = ret.contentId ? ret.contentId.toString() : null;
         ret.userId = ret.userId ? ret.userId.toString() : null;
+        ret.analysisId = ret.analysisId ? ret.analysisId.toString() : null;
+        ret.transcriptId = ret.transcriptId ? ret.transcriptId.toString() : null;
         delete ret._id;
         delete ret.__v;
         return ret;
@@ -76,5 +154,8 @@ const reportSchema = new mongoose.Schema(
 
 reportSchema.index({ userId: 1, createdAt: -1 });
 reportSchema.index({ contentId: 1, createdAt: -1 });
+reportSchema.index({ contentId: 1, version: -1 });
+reportSchema.index({ shareToken: 1 }, { sparse: true });
 
 export const Report = mongoose.model('Report', reportSchema);
+

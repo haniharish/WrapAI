@@ -3,9 +3,13 @@ import mongoose from 'mongoose';
 const citationSchema = new mongoose.Schema(
   {
     segmentId: { type: mongoose.Schema.Types.ObjectId, ref: 'TranscriptSegment', default: null },
+    chunkId: { type: String, default: null },           // Phase 10: EmbeddingChunk reference
     speakerName: { type: String, default: '' },
-    timestamp: { type: Number, required: true },
-    excerpt: { type: String, required: true }
+    speakerLabel: { type: String, default: '' },        // Phase 10: e.g., SPEAKER_00
+    timestamp: { type: Number, default: 0 },
+    excerpt: { type: String, default: '' },
+    timecode: { type: String, default: null },          // Phase 10: MM:SS display string
+    score: { type: Number, default: null }              // Phase 10: similarity score
   },
   { _id: false }
 );
@@ -45,6 +49,10 @@ const chatMessageSchema = new mongoose.Schema(
     tokensUsed: {
       type: Number,
       default: 0
+    },
+    grounded: {
+      type: Boolean,
+      default: false  // Phase 10: was the response grounded in retrieved context?
     }
   },
   {

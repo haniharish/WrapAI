@@ -16,7 +16,7 @@ services:
       timeout: 3s
       retries: 5
 
-  # 2. Python FastAPI AI Microservice (Speech-to-Text & Media Preprocessing)
+  # 2. Python FastAPI AI Microservice (Speech-to-Text, Diarization, LLM)
   ai-service:
     build:
       context: ./ai-service
@@ -53,7 +53,7 @@ services:
     environment:
       - PORT=5000
       - NODE_ENV=production
-      - CLIENT_URL=http://localhost:5173
+      - CLIENT_URL=${CLIENT_URL:-http://localhost}
       - MONGODB_URI=${MONGODB_URI}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -99,6 +99,18 @@ services:
         condition: service_started
     volumes:
       - backend-uploads:/app/uploads
+
+  # 5. React Frontend Client (Nginx)
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: wrapai-client
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
 
 volumes:
   redis-data:

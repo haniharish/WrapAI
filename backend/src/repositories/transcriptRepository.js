@@ -75,6 +75,10 @@ export const transcriptRepository = {
     return this.updateSpeakerName(contentId, speakerLabel, displayName);
   },
 
+  async findSegmentsByTranscriptId(transcriptId) {
+    return TranscriptSegment.find({ transcriptId }).sort({ sequence: 1 }).exec();
+  },
+
   async deleteByContentId(contentId) {
     await Promise.all([
       Transcript.deleteOne({ contentId }),
@@ -83,3 +87,4 @@ export const transcriptRepository = {
     ]);
   }
 };
+

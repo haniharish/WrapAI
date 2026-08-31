@@ -11,14 +11,19 @@ import { LoginPage } from '../pages/auth/LoginPage.jsx';
 import { RegisterPage } from '../pages/auth/RegisterPage.jsx';
 import { ForgotPasswordPage } from '../pages/auth/ForgotPasswordPage.jsx';
 import { ResetPasswordPage } from '../pages/auth/ResetPasswordPage.jsx';
+import { SharedReportPage } from '../pages/public/SharedReportPage.jsx';
+import { AcceptInvitePage } from '../pages/public/AcceptInvitePage.jsx';
 
 // User Dashboard Pages
+
 import { UserDashboardPage } from '../pages/user/UserDashboardPage.jsx';
 import { UploadPage } from '../pages/user/UploadPage.jsx';
 import { ProcessingPage } from '../pages/user/ProcessingPage.jsx';
 import { MyContentPage } from '../pages/user/MyContentPage.jsx';
 import { ReportsListPage } from '../pages/user/ReportsListPage.jsx';
 import { SettingsPage } from '../pages/user/SettingsPage.jsx';
+import { WorkspaceSettingsPage } from '../pages/user/WorkspaceSettingsPage.jsx';
+
 
 // Workspace & Intelligence Tabs
 import { ContentWorkspaceLayout } from '../pages/user/workspace/ContentWorkspaceLayout.jsx';
@@ -50,7 +55,10 @@ export function AppRoutes() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/shared/reports/:token" element={<SharedReportPage />} />
+        <Route path="/invite/accept" element={<AcceptInvitePage />} />
       </Route>
+
 
       {/* User Dashboard Routes (Protected) */}
       <Route element={<ProtectedRoute allowedRoles={['USER', 'ADMIN']} />}>
@@ -60,7 +68,9 @@ export function AppRoutes() {
           <Route path="/processing/:id" element={<ProcessingPage />} />
           <Route path="/content" element={<MyContentPage />} />
           <Route path="/reports" element={<ReportsListPage />} />
+          <Route path="/workspace/settings" element={<WorkspaceSettingsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+
 
           {/* Content Workspace Tab Routes */}
           <Route path="/content/:id" element={<ContentWorkspaceLayout />}>

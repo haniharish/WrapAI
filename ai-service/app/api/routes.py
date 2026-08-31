@@ -279,3 +279,127 @@ async def analyze_transcript_content(request: AnalyzeRequest):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"code": "ANALYSIS_FAILED", "message": str(err)}
         )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Phase 10: Embedding Generation Endpoint
+# ─────────────────────────────────────────────────────────────────────────────
+
+from app.models.schemas import (
+    EmbeddingsRequest,
+    EmbeddingsResponse,
+    EmbeddingsResponseData,
+    TokenUsage,
+    RAGRequest,
+    RAGResponse,
+)
+from app.services.embedding.provider import get_embedding_provider
+from app.services.rag.rag_service import rag_service
+
+
+@router.post(
+    "/internal/v1/embeddings/generate",
+    response_model=EmbeddingsResponse,
+    dependencies=[Depends(verify_internal_api_key)],
+    tags=["Embeddings & RAG"]
+)
+async def generate_embeddings(request: EmbeddingsRequest):
+    """
+    Protected internal endpoint.
+    Accepts a list of text chunks and returns embedding vectors.
+    The embedding provider is configurable via EMBEDDING_PROVIDER env var.
+    """
+    if not request.texts:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "INVALID_REQUEST", "message": "texts list cannot be empty"}
+        )
+
+    provider = get_embedding_provider()
+    try:
+        embeddings = await provider.embed(request.texts)
+        token_estimate = provider.estimate_token_usage(request.texts)
+        return EmbeddingsResponse(
+            success=True,
+            message="Embeddings generated successfully",
+            data=EmbeddingsResponseData(
+                embeddings=embeddings,
+                model=provider.model_name,
+                dimensions=provider.dimensions,
+                usage=TokenUsage(
+                    inputTokens=token_estimate,
+                    outputTokens=0,
+                    totalTokens=token_estimate,
+                    estimatedCostUsd=0.0,
+                ),
+            )
+        )
+    except Exception as err:
+        logger.error(f"Embedding generation failed: {str(err)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"code": "EMBEDDING_FAILED", "message": str(err)}
+        )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Phase 10: RAG Answer Generation Endpoint
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.post(
+    "/internal/v1/rag/answer",
+    response_model=RAGResponse,
+    dependencies=[Depends(verify_internal_api_key)],
+    tags=["Embeddings & RAG"]
+)
+async def generate_rag_answer(request: RAGRequest):
+    """
+    Protected internal endpoint.
+    Receives a user query + pre-retrieved vector chunks + conversation history.
+    Generates a grounded LLM answer with source citations and timestamps.
+    """
+    if not request.query or not request.query.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "INVALID_REQUEST", "message": "query cannot be empty"}
+        )
+
+    # Convert Pydantic chunk items to plain dicts for context builder
+    chunks_as_dicts = [
+        {
+            "chunkIndex": c.chunkIndex,
+            "text": c.text,
+            "startTime": c.startTime,
+            "endTime": c.endTime,
+            "speakerLabel": c.speakerLabel,
+            "speakerDisplayName": c.speakerDisplayName,
+            "speakerId": c.speakerId,
+            "score": 0.9,  # Pre-retrieved, assume high relevance
+        }
+        for c in request.chunks
+    ]
+
+    history_as_dicts = [
+        {"role": m.role, "content": m.content}
+        for m in request.conversationHistory
+    ]
+
+    try:
+        result = await rag_service.answer(
+            query=request.query,
+            chunks=chunks_as_dicts,
+            conversation_history=history_as_dicts,
+            content_id=request.contentId,
+        )
+        return RAGResponse(
+            success=True,
+            message="RAG answer synthesized successfully",
+            data=result,
+        )
+    except Exception as err:
+        logger.error(f"RAG answer generation failed for {request.contentId}: {str(err)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"code": "RAG_FAILED", "message": str(err)}
+        )
+

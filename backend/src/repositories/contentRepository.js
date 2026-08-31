@@ -5,6 +5,10 @@ export const contentRepository = {
     return Content.findOne({ _id: id, isDeleted: false }).exec();
   },
 
+  async findByIdAndUserId(id, userId) {
+    return Content.findOne({ _id: id, userId, isDeleted: false }).exec();
+  },
+
   async create(contentData) {
     return Content.create(contentData);
   },

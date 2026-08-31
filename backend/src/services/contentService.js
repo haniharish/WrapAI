@@ -3,6 +3,8 @@ import { userRepository } from '../repositories/userRepository.js';
 import { auditLogRepository } from '../repositories/auditLogRepository.js';
 import { storageService } from './storageService.js';
 import { processingQueueService } from './processingQueueService.js';
+import { embeddingService } from './embeddingService.js';
+import { chatRepository } from '../repositories/chatRepository.js';
 import { ApiError } from '../utils/ApiError.js';
 import { config } from '../config/environment.js';
 import { CONTENT_TYPES, PROCESSING_STATUS } from '../constants/contentTypes.js';
@@ -260,6 +262,12 @@ export const contentService = {
     if (content.storageKey) {
       await storageService.deleteFile(content.storageKey);
     }
+
+    // Phase 10: Cascade delete vector index and chat history
+    await Promise.allSettled([
+      embeddingService.deleteIndexForContent(contentId),
+      chatRepository.deleteByContentId(contentId)
+    ]);
 
     if (content.fileSizeBytes > 0) {
       const user = await userRepository.findById(content.userId);

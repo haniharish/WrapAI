@@ -46,6 +46,12 @@ const contentSchema = new mongoose.Schema(
       required: true,
       index: true
     },
+    workspaceId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Workspace',
+      default: null,
+      index: true
+    },
     title: {
       type: String,
       required: [true, 'Content title is required'],
@@ -157,6 +163,25 @@ const contentSchema = new mongoose.Schema(
     deletedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
+      default: null
+    },
+    // Phase 10: Vector Indexing Status
+    isIndexed: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
+    indexingStatus: {
+      type: String,
+      enum: ['NOT_STARTED', 'INDEXING', 'INDEXED', 'FAILED'],
+      default: 'NOT_STARTED'
+    },
+    embeddingModel: {
+      type: String,
+      default: null
+    },
+    embeddingVersion: {
+      type: String,
       default: null
     }
   },

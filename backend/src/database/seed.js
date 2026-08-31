@@ -16,8 +16,16 @@ import {
   ChatSession,
   ChatMessage,
   ProcessingJob,
-  AuditLog
+  AuditLog,
+  EmbeddingChunk,
+  Workspace,
+  WorkspaceMember,
+  WorkspaceInvitation,
+  Comment,
+  Notification,
+  UsageRecord
 } from '../models/index.js';
+
 
 export async function seedDatabase(customUri = null) {
   if (config.nodeEnv === 'production' && !process.env.ALLOW_PROD_SEED) {
@@ -43,8 +51,16 @@ export async function seedDatabase(customUri = null) {
     ChatSession.deleteMany({}),
     ChatMessage.deleteMany({}),
     ProcessingJob.deleteMany({}),
-    AuditLog.deleteMany({})
+    AuditLog.deleteMany({}),
+    EmbeddingChunk.deleteMany({}),
+    Workspace.deleteMany({}),
+    WorkspaceMember.deleteMany({}),
+    WorkspaceInvitation.deleteMany({}),
+    Comment.deleteMany({}),
+    Notification.deleteMany({}),
+    UsageRecord.deleteMany({})
   ]);
+
 
   // 2. Create Users
   logger.info('Seeding test users...');
@@ -241,6 +257,79 @@ export async function seedDatabase(customUri = null) {
 
   await TranscriptSegment.insertMany(segments);
 
+  // 5.5. Create Embedding Chunks for Phase 10 Vector Search & RAG
+  logger.info('Seeding embedding chunks...');
+  function createHeuristicVector(text) {
+    const DIM = 768;
+    const vec = new Array(DIM).fill(0);
+    const tokens = text.toLowerCase().split(/\s+/);
+    for (let i = 0; i < tokens.length; i++) {
+      const word = tokens[i];
+      for (let n = 1; n <= Math.min(4, word.length); n++) {
+        for (let j = 0; j <= word.length - n; j++) {
+          const gram = word.slice(j, j + n);
+          let h = 0;
+          for (let k = 0; k < gram.length; k++) h = (h * 31 + gram.charCodeAt(k)) >>> 0;
+          vec[h % DIM] += 1.0;
+        }
+      }
+    }
+    const norm = Math.sqrt(vec.reduce((s, v) => s + v * v, 0)) || 1;
+    return vec.map((v) => v / norm);
+  }
+
+  const chunk1Text = '[00:00] Rahul Sharma: "Good morning everyone. Welcome to our Q3 Architecture Sync. Today we need to resolve our database scaling strategy and background queue topologies for WrapAI."';
+  const chunk2Text = '[01:33] Sarah Jenkins: "Thanks Rahul. On the database side, keeping our relational and vector metadata inside MongoDB Atlas simplifies our deployment pipeline significantly."';
+  const chunk3Text = '[03:36] Alexandre Dubois: "I completely agree. For pyannote diarization and Whisper timestamp alignment, we have validated sub-second precision on GPU workers."';
+
+  await EmbeddingChunk.create([
+    {
+      contentId: content1._id,
+      userId: rahul._id,
+      transcriptId: transcript._id,
+      chunkIndex: 0,
+      text: chunk1Text,
+      embedding: createHeuristicVector(chunk1Text),
+      startTime: 0,
+      endTime: 92,
+      speakerId: speaker1._id,
+      speakerLabel: 'SPEAKER_00',
+      speakerDisplayName: 'Rahul Sharma',
+      embeddingModel: 'heuristic-embedding-v1',
+      embeddingVersion: 'v1'
+    },
+    {
+      contentId: content1._id,
+      userId: rahul._id,
+      transcriptId: transcript._id,
+      chunkIndex: 1,
+      text: chunk2Text,
+      embedding: createHeuristicVector(chunk2Text),
+      startTime: 93,
+      endTime: 215,
+      speakerId: speaker2._id,
+      speakerLabel: 'SPEAKER_01',
+      speakerDisplayName: 'Sarah Jenkins',
+      embeddingModel: 'heuristic-embedding-v1',
+      embeddingVersion: 'v1'
+    },
+    {
+      contentId: content1._id,
+      userId: rahul._id,
+      transcriptId: transcript._id,
+      chunkIndex: 2,
+      text: chunk3Text,
+      embedding: createHeuristicVector(chunk3Text),
+      startTime: 216,
+      endTime: 340,
+      speakerId: speaker3._id,
+      speakerLabel: 'SPEAKER_02',
+      speakerDisplayName: 'Alexandre Dubois',
+      embeddingModel: 'heuristic-embedding-v1',
+      embeddingVersion: 'v1'
+    }
+  ]);
+
   // 6. Create Topics
   logger.info('Seeding topics...');
   await Topic.insertMany([
@@ -427,12 +516,20 @@ export async function seedDatabase(customUri = null) {
     userId: rahul._id,
     title: 'Executive Minutes: Q3 Architecture Sync',
     contentTitle: content1.title,
-    reportType: 'MEETING_MINUTES',
+    reportType: 'MEETING_REPORT',
+    template: 'MEETING',
+    detailLevel: 'STANDARD',
+    format: 'PDF',
+    status: 'COMPLETED',
+    sections: ['SUMMARY', 'TOPICS', 'DECISIONS', 'ACTION_ITEMS', 'HIGHLIGHTS', 'PARTICIPANTS'],
+    isShared: true,
+    shareToken: 'seed_sample_share_token_rahul_q3',
+    shareExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     htmlContent: '<h1>Executive Minutes</h1><p>The team finalized the MongoDB Atlas database architecture and agreed on BullMQ worker topologies.</p>',
     markdownContent: '# Executive Minutes\n\nThe team finalized the MongoDB Atlas database architecture.',
-    status: 'GENERATED',
-    sections: ['Executive Summary', 'Key Decisions', 'Action Items', 'Topics', 'Diarized Minutes']
+    version: 1
   });
+
 
   // 10. Create Chat Session & Messages
   logger.info('Seeding chat session...');
@@ -489,7 +586,107 @@ export async function seedDatabase(customUri = null) {
     metadata: { title: content1.title, contentType: 'VIDEO' }
   });
 
+  // 12. Seed Workspaces & Collaboration
+  logger.info('Seeding workspaces and collaboration...');
+  const rahulPersonalWs = await Workspace.create({
+    name: "Rahul's Space",
+    slug: 'personal-rahul',
+    ownerId: rahul._id,
+    type: 'PERSONAL',
+    plan: 'PRO'
+  });
+  await WorkspaceMember.create({
+    workspaceId: rahulPersonalWs._id,
+    userId: rahul._id,
+    role: 'OWNER'
+  });
+
+  const sarahPersonalWs = await Workspace.create({
+    name: "Sarah's Space",
+    slug: 'personal-sarah',
+    ownerId: sarah._id,
+    type: 'PERSONAL',
+    plan: 'FREE'
+  });
+  await WorkspaceMember.create({
+    workspaceId: sarahPersonalWs._id,
+    userId: sarah._id,
+    role: 'OWNER'
+  });
+
+  const teamAlphaWs = await Workspace.create({
+    name: 'Team Alpha Intelligence',
+    slug: 'team-alpha',
+    ownerId: rahul._id,
+    type: 'TEAM',
+    plan: 'BUSINESS'
+  });
+  await WorkspaceMember.create({
+    workspaceId: teamAlphaWs._id,
+    userId: rahul._id,
+    role: 'OWNER'
+  });
+  await WorkspaceMember.create({
+    workspaceId: teamAlphaWs._id,
+    userId: sarah._id,
+    role: 'EDITOR'
+  });
+
+  // Associate content1 with Team Alpha
+  content1.workspaceId = teamAlphaWs._id;
+  await content1.save();
+
+  // 13. Seed Comments
+  logger.info('Seeding comments...');
+  const seedComment = await Comment.create({
+    userId: sarah._id,
+    workspaceId: teamAlphaWs._id,
+    contentId: content1._id,
+    targetType: 'TRANSCRIPT',
+    timestampSeconds: 93,
+    text: 'Can we double check if MongoDB Atlas Vector Search supports custom filters alongside similarity scores?'
+  });
+
+  await Comment.create({
+    userId: rahul._id,
+    workspaceId: teamAlphaWs._id,
+    contentId: content1._id,
+    targetType: 'TRANSCRIPT',
+    timestampSeconds: 93,
+    text: 'Yes, MongoDB Atlas Vector Search natively supports MQL pre-filtering by workspaceId and status.',
+    parentCommentId: seedComment._id
+  });
+
+  // 14. Seed Notifications
+  logger.info('Seeding notifications...');
+  await Notification.create({
+    userId: rahul._id,
+    workspaceId: teamAlphaWs._id,
+    type: 'COMMENT_REPLY',
+    title: 'New Comment on Q3 Engineering Sync',
+    message: 'Sarah Jenkins left a note at 01:33.',
+    resourceType: 'CONTENT',
+    resourceId: content1._id.toString(),
+    read: false
+  });
+
+  // 15. Seed Usage Records
+  logger.info('Seeding usage tracking...');
+  await UsageRecord.create({
+    workspaceId: teamAlphaWs._id,
+    userId: rahul._id,
+    metric: 'STORAGE_BYTES',
+    amount: 104857600
+  });
+  await UsageRecord.create({
+    workspaceId: teamAlphaWs._id,
+    userId: rahul._id,
+    metric: 'LLM_ANALYSIS_COUNT',
+    amount: 3
+  });
+
   logger.info('✅ WrapAI Database Seeding Completed Successfully.');
+
   if (customUri) {
     await disconnectDatabase();
   }

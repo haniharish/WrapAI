@@ -12,3 +12,12 @@ export { ChatSession } from './ChatSession.js';
 export { ChatMessage } from './ChatMessage.js';
 export { ProcessingJob } from './ProcessingJob.js';
 export { AuditLog } from './AuditLog.js';
+export { EmbeddingChunk } from './EmbeddingChunk.js';
+export { Workspace } from './Workspace.js';
+export { WorkspaceMember } from './WorkspaceMember.js';
+export { WorkspaceInvitation } from './WorkspaceInvitation.js';
+export { Comment } from './Comment.js';
+export { Notification } from './Notification.js';
+export { UsageRecord } from './UsageRecord.js';
+
+

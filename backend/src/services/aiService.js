@@ -314,5 +314,181 @@ export const aiService = {
       logger.error(`AI content analysis failed for content ${contentId}: ${err.message}`);
       throw ApiError.internal(`LLM content analysis failed: ${err.message}`);
     }
+  },
+
+  /**
+   * Phase 10: Generate embeddings for an array of text chunks.
+   * Calls Python AI Service /internal/v1/embeddings/generate.
+   * Falls back to heuristic in-process generation for offline/test environments.
+   *
+   * @param {string[]} texts - Array of chunk texts to embed.
+   * @returns {{ embeddings: number[][], model: string, dimensions: number }}
+   */
+  async generateEmbeddings(texts) {
+    if (!texts || texts.length === 0) {
+      return { embeddings: [], model: 'heuristic-embedding-v1', dimensions: 768 };
+    }
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+      const response = await fetch(`${config.aiService.url}/internal/v1/embeddings/generate`, {
+        method: 'POST',
+        headers: {
+          'X-Internal-API-Key': config.aiService.apiKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ texts }),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      const json = await response.json();
+      if (!response.ok) {
+        throw new Error(json.detail?.message || 'Embedding generation failed');
+      }
+
+      return json.data;
+    } catch (err) {
+      if (err.name === 'AbortError' || err.message?.includes('fetch') || err.code === 'ECONNREFUSED') {
+        logger.warn(`[aiService.generateEmbeddings] AI service unavailable, using heuristic fallback: ${err.message}`);
+        return _heuristicEmbeddingsFallback(texts);
+      }
+      logger.error(`[aiService.generateEmbeddings] failed: ${err.message}`);
+      throw ApiError.internal(`Embedding generation failed: ${err.message}`);
+    }
+  },
+
+  /**
+   * Phase 10: Generate a grounded RAG answer from retrieved chunks.
+   * Calls Python AI Service /internal/v1/rag/answer.
+   * Falls back to heuristic offline RAG for test environments.
+   *
+   * @param {string} query - User question.
+   * @param {string} contentId - Content ID being queried.
+   * @param {Array} chunks - Retrieved EmbeddingChunk documents.
+   * @param {Array} conversationHistory - Prior conversation turns [{role, content}].
+   * @returns {{ answer: string, sources: Array, grounded: boolean, tokensUsed: number }}
+   */
+  async generateRAGAnswer(query, contentId, chunks, conversationHistory = []) {
+    // Convert Mongoose docs to plain schema-compatible objects
+    const chunkItems = (chunks || []).map((c) => ({
+      contentId: contentId.toString(),
+      transcriptId: c.transcriptId?.toString() || null,
+      chunkIndex: c.chunkIndex || 0,
+      text: c.text || '',
+      startTime: c.startTime || 0,
+      endTime: c.endTime || 0,
+      speakerLabel: c.speakerLabel || 'SPEAKER_00',
+      speakerDisplayName: c.speakerDisplayName || 'Speaker',
+      speakerId: c.speakerId?.toString() || null,
+      segmentIds: (c.segmentIds || []).map(String)
+    }));
+
+    const historyItems = (conversationHistory || []).map((m) => ({
+      role: m.role || 'USER',
+      content: m.content || ''
+    }));
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+      const response = await fetch(`${config.aiService.url}/internal/v1/rag/answer`, {
+        method: 'POST',
+        headers: {
+          'X-Internal-API-Key': config.aiService.apiKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          query,
+          contentId: contentId.toString(),
+          chunks: chunkItems,
+          conversationHistory: historyItems
+        }),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      const json = await response.json();
+      if (!response.ok) {
+        throw new Error(json.detail?.message || 'RAG answer generation failed');
+      }
+
+      return json.data;
+    } catch (err) {
+      if (err.name === 'AbortError' || err.message?.includes('fetch') || err.code === 'ECONNREFUSED') {
+        logger.warn(`[aiService.generateRAGAnswer] AI service unavailable, using heuristic fallback: ${err.message}`);
+        return _heuristicRAGFallback(query, chunks);
+      }
+      logger.error(`[aiService.generateRAGAnswer] failed: ${err.message}`);
+      throw ApiError.internal(`RAG answer generation failed: ${err.message}`);
+    }
   }
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Private heuristic fallbacks (offline / test environments)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function _heuristicEmbeddingsFallback(texts) {
+  // Deterministic 768-dim heuristic embedding using character hashing
+  const DIM = 768;
+  const embeddings = texts.map((text) => {
+    const vec = new Array(DIM).fill(0);
+    const tokens = text.toLowerCase().split(/\s+/);
+    for (let i = 0; i < tokens.length; i++) {
+      const word = tokens[i];
+      for (let n = 1; n <= Math.min(4, word.length); n++) {
+        for (let j = 0; j <= word.length - n; j++) {
+          const gram = word.slice(j, j + n);
+          let h = 0;
+          for (let k = 0; k < gram.length; k++) h = (h * 31 + gram.charCodeAt(k)) >>> 0;
+          vec[h % DIM] += 1.0;
+        }
+      }
+    }
+    // L2 normalize
+    const norm = Math.sqrt(vec.reduce((s, v) => s + v * v, 0)) || 1;
+    return vec.map((v) => v / norm);
+  });
+  return { embeddings, model: 'heuristic-embedding-v1', dimensions: DIM };
+}
+
+function _heuristicRAGFallback(query, chunks) {
+  const NO_ANSWER = "I couldn't find enough information in this content to answer that.";
+  if (!chunks || chunks.length === 0) {
+    return { answer: NO_ANSWER, sources: [], grounded: false, tokensUsed: 0 };
+  }
+  const qWords = new Set(query.toLowerCase().split(/\s+/));
+  let best = null, bestScore = -1;
+  for (const chunk of chunks) {
+    const txt = (chunk.text || '').toLowerCase();
+    const overlap = [...qWords].filter((w) => txt.includes(w)).length;
+    if (overlap > bestScore) { bestScore = overlap; best = chunk; }
+  }
+  if (!best) return { answer: NO_ANSWER, sources: [], grounded: false, tokensUsed: 0 };
+
+  const start = best.startTime || 0;
+  const mins = String(Math.floor(start / 60)).padStart(2, '0');
+  const secs = String(Math.floor(start % 60)).padStart(2, '0');
+  const tc = `${mins}:${secs}`;
+  const excerpt = (best.text || '').slice(0, 200);
+  return {
+    answer: `Based on the recorded content: ${excerpt}`,
+    sources: [{
+      chunkId: best._id?.toString() || best.id || '',
+      speaker: best.speakerDisplayName || 'Speaker',
+      speakerLabel: best.speakerLabel || 'SPEAKER_00',
+      startTime: start,
+      endTime: best.endTime || start,
+      excerpt: excerpt.slice(0, 120),
+      timecode: tc,
+      score: 0.8
+    }],
+    grounded: true,
+    tokensUsed: Math.floor((query.length + excerpt.length) / 4)
+  };
+}
+

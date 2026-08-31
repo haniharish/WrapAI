@@ -101,6 +101,59 @@ class StorageService {
     }
   }
 
+  generateReportStorageKey(userId, contentId, reportId, extension = 'pdf') {
+    const ext = extension.startsWith('.') ? extension : `.${extension}`;
+    return `reports/${userId}/${contentId}/${reportId}/report${ext}`;
+  }
+
+  async uploadReportBuffer({ userId, contentId, reportId, buffer, mimeType, extension = 'pdf' }) {
+    const storageKey = this.generateReportStorageKey(userId, contentId, reportId, extension);
+
+    if (this.isS3) {
+      const command = new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: storageKey,
+        Body: buffer,
+        ContentType: mimeType,
+        Metadata: {
+          userId: userId.toString(),
+          contentId: contentId.toString(),
+          reportId: reportId.toString()
+        }
+      });
+      await this.s3Client.send(command);
+      logger.info('Report file uploaded to AWS S3', { storageKey, mimeType });
+      return { storageKey, storageProvider: 'AWS_S3' };
+    } else {
+      const fullPath = path.join(this.localStorageDir, storageKey.replace(/\//g, '_'));
+      fs.writeFileSync(fullPath, buffer);
+      logger.info('Report file written to Local Fallback Storage', { fullPath, storageKey });
+      return { storageKey, storageProvider: 'LOCAL_STORAGE' };
+    }
+  }
+
+  async getFileBuffer(storageKey) {
+    if (!storageKey) return null;
+    if (this.isS3) {
+      const command = new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: storageKey
+      });
+      const response = await this.s3Client.send(command);
+      const chunks = [];
+      for await (const chunk of response.Body) {
+        chunks.push(chunk);
+      }
+      return Buffer.concat(chunks);
+    } else {
+      const fullPath = path.join(this.localStorageDir, storageKey.replace(/\//g, '_'));
+      if (fs.existsSync(fullPath)) {
+        return fs.readFileSync(fullPath);
+      }
+      return null;
+    }
+  }
+
   getLocalFilePath(storageKey) {
     if (!storageKey || this.isS3) return null;
     const fullPath = path.join(this.localStorageDir, storageKey.replace(/\//g, '_'));
@@ -109,3 +162,4 @@ class StorageService {
 }
 
 export const storageService = new StorageService();
+

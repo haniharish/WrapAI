@@ -24,4 +24,11 @@ router.patch('/:id', validate(validateUpdateContent), asyncHandler(contentContro
 router.delete('/:id', asyncHandler(contentController.delete));
 router.get('/:id/access', asyncHandler(contentController.getAccess));
 
+// Phase 11: Content Reports
+import { reportController } from '../controllers/reportController.js';
+router.get('/:contentId/reports', asyncHandler(reportController.getContentReports));
+router.post('/:contentId/reports', asyncHandler(reportController.create));
+router.post('/:contentId/reports/preview', asyncHandler(reportController.preview));
+
 export default router;
+

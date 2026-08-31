@@ -10,12 +10,21 @@ import reportRoutes from './report.routes.js';
 import chatRoutes from './chat.routes.js';
 import adminRoutes from './admin.routes.js';
 import speakerRoutes from './speaker.routes.js';
+import workspaceRoutes from './workspace.routes.js';
+import searchRoutes from './search.routes.js';
+import commentRoutes from './comment.routes.js';
+import notificationRoutes from './notification.routes.js';
 
 const router = Router();
 
 router.use('/health', healthRoutes);
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
+router.use('/workspaces', workspaceRoutes);
+router.use('/search', searchRoutes);
+router.use('/notifications', notificationRoutes);
+router.use('/collaboration', commentRoutes);
+router.use('/', commentRoutes);
 router.use('/content', intelligenceRoutes);
 router.use('/content', transcriptRoutes);
 router.use('/content', contentRoutes);
@@ -26,3 +35,4 @@ router.use('/chat', chatRoutes);
 router.use('/admin', adminRoutes);
 
 export default router;
+

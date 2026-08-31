@@ -8,9 +8,25 @@ export const analysisRepository = {
     return Analysis.findOne({ contentId }).sort({ version: -1 }).exec();
   },
 
+  async findByContentId(contentId) {
+    const analysis = await Analysis.findOne({ contentId }).sort({ version: -1 }).exec();
+    if (!analysis) return null;
+    const [topics, decisions, actionItems] = await Promise.all([
+      Topic.find({ contentId }).sort({ sequence: 1 }).exec(),
+      Decision.find({ contentId }).sort({ timestamp: 1 }).exec(),
+      ActionItem.find({ contentId }).sort({ timestamp: 1 }).exec()
+    ]);
+    const obj = analysis.toObject ? analysis.toObject() : analysis;
+    if ((!obj.topics || obj.topics.length === 0) && topics.length > 0) obj.topics = topics;
+    if ((!obj.decisions || obj.decisions.length === 0) && decisions.length > 0) obj.decisions = decisions;
+    if ((!obj.actionItems || obj.actionItems.length === 0) && actionItems.length > 0) obj.actionItems = actionItems;
+    return obj;
+  },
+
   async findByContentIdAndVersion(contentId, version) {
     return Analysis.findOne({ contentId, version }).exec();
   },
+
 
   async findVersions(contentId) {
     return Analysis.find({ contentId })

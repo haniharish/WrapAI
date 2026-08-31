@@ -7,6 +7,7 @@ import { transcriptRepository } from '../repositories/transcriptRepository.js';
 import { analysisRepository } from '../repositories/analysisRepository.js';
 import { storageService } from '../services/storageService.js';
 import { aiService } from '../services/aiService.js';
+import { embeddingService } from '../services/embeddingService.js';
 import { PROCESSING_STATUS } from '../constants/contentTypes.js';
 import { logger } from '../utils/logger.js';
 
@@ -366,6 +367,66 @@ export async function executeMockProcessingPipeline(jobRecord, bullJob = null) {
       timestamp: a.timestamp || 0
     }));
     await analysisRepository.insertActionItems(actionDocs);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────
+  // Phase 10: CHUNKING → GENERATING_EMBEDDINGS → INDEXING
+  // ─────────────────────────────────────────────────────────────────────
+  let embeddingChunksCount = 0;
+  let embeddingModelName = 'heuristic-embedding-v1';
+  try {
+    // Stage: CHUNKING (62%)
+    jobRecord.stage = PROCESSING_STATUS.CHUNKING;
+    jobRecord.progress = 62;
+    jobRecord.logs.push(`[${new Date().toISOString()}] Splitting transcript into semantic chunks for vector indexing`);
+    await jobRecord.save();
+    await contentRepository.updateById(content._id, {
+      processingStatus: PROCESSING_STATUS.CHUNKING,
+      processingProgress: 62,
+      indexingStatus: 'INDEXING'
+    });
+    if (bullJob) await bullJob.updateProgress(62).catch(() => {});
+
+    // Fetch segments for embedding (may already be in scope)
+    const segmentsForEmbedding = finalTranscriptSegments && finalTranscriptSegments.length > 0
+      ? finalTranscriptSegments
+      : (transcriptDoc ? await transcriptRepository.findSegmentsByTranscriptId(transcriptDoc._id) : []);
+
+    const { chunksCount, embeddingModel } = await embeddingService.indexContent({
+      contentId: content._id.toString(),
+      userId: content.userId.toString(),
+      transcriptId: transcriptDoc?._id?.toString() || null,
+      segments: segmentsForEmbedding,
+      onProgress: async ({ stage, percent, message }) => {
+        jobRecord.progress = percent;
+        jobRecord.logs.push(`[${new Date().toISOString()}] ${message}`);
+        await jobRecord.save().catch(() => {});
+        await contentRepository.updateById(content._id, { processingProgress: percent }).catch(() => {});
+        if (bullJob) await bullJob.updateProgress(percent).catch(() => {});
+      }
+    });
+
+    embeddingChunksCount = chunksCount;
+    embeddingModelName = embeddingModel;
+
+    // Update content with indexing completion
+    await contentRepository.updateById(content._id, {
+      isIndexed: chunksCount > 0,
+      indexingStatus: chunksCount > 0 ? 'INDEXED' : 'FAILED',
+      embeddingModel,
+      embeddingVersion: 'v1'
+    });
+
+    logger.info(`[worker] Embedding indexing complete: ${chunksCount} chunks indexed for content ${content._id}`, {
+      embeddingModel
+    });
+  } catch (embErr) {
+    // Non-fatal: log but don't fail the overall pipeline
+    logger.warn(`[worker] Embedding indexing failed (non-fatal): ${embErr.message}`, {
+      contentId: content._id.toString()
+    });
+    jobRecord.logs.push(`[${new Date().toISOString()}] [WARN] Embedding indexing failed: ${embErr.message} — continuing to COMPLETED`);
+    await contentRepository.updateById(content._id, { indexingStatus: 'FAILED' });
   }
 
   // Stage 9: COMPLETED (100%)

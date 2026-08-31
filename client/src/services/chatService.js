@@ -1,62 +1,138 @@
-import { mockChatSessions } from '../mocks/mockChat.js';
-import { mockDelay, createApiResponse } from './api.js';
+import { apiClient } from './api.js';
 
-let localSessions = { ...mockChatSessions };
+/**
+ * Client-side Chat & RAG Service — Phase 10
+ * Replaces mock with real API calls to /api/v1/chat endpoints.
+ *
+ * API shape expected from backend:
+ *   GET  /chat/sessions?contentId=xxx         → { data: [ChatSession] }
+ *   POST /chat/sessions                        → { data: ChatSession }
+ *   GET  /chat/sessions/:id/messages           → { data: [ChatMessage] }
+ *   POST /chat/ask                             → { data: { sessionId, userMessage, assistantMessage } }
+ *   PATCH /chat/sessions/:id                   → { data: ChatSession }
+ *   DELETE /chat/sessions/:id                  → { data: { deleted: true } }
+ *
+ * ChatMessage shape:
+ *   { id, role ('USER'|'ASSISTANT'), content, citations, grounded, tokensUsed, createdAt }
+ * Citation shape:
+ *   { chunkId, speakerName, speakerLabel, timestamp, excerpt, timecode, score }
+ */
+
+const BASE = '/chat';
 
 export const chatService = {
-  async getChatHistory(contentId) {
-    await mockDelay(200);
-    const history = localSessions[contentId] || localSessions['cnt_01'] || [];
-    return createApiResponse(history);
+  /**
+   * Load all chat sessions for a content item.
+   */
+  async getSessions(contentId) {
+    const res = await apiClient.get(`${BASE}/sessions`, {
+      params: contentId ? { contentId } : {}
+    });
+    return res.data || [];
   },
 
-  async askQuestion(contentId, questionText) {
-    await mockDelay(800); // Simulate RAG query + LLM generation
-    const key = localSessions[contentId] ? contentId : 'cnt_01';
-    if (!localSessions[key]) localSessions[key] = [];
+  /**
+   * Create a new chat session for a content item.
+   */
+  async createSession(contentId, title = 'New Conversation') {
+    const res = await apiClient.post(`${BASE}/sessions`, { contentId, title });
+    return res.data;
+  },
 
-    const userMsg = {
-      id: `msg_${Date.now()}`,
-      sender: 'USER',
-      message: questionText,
-      timestamp: new Date().toISOString()
-    };
-    localSessions[key].push(userMsg);
+  /**
+   * Rename a chat session.
+   */
+  async renameSession(sessionId, newTitle) {
+    const res = await apiClient.patch(`${BASE}/sessions/${sessionId}`, { title: newTitle });
+    return res.data;
+  },
 
-    // Context-sensitive mock responses
-    let answerText = 'Based on the discussion, the team aligned on using MongoDB Atlas for vector search and BullMQ with Redis for background task orchestration.';
-    let citations = [
-      {
-        segmentId: 'seg_03',
-        speaker: 'Alexandre Dubois',
-        timestamp: 93,
-        timecode: '00:01:33',
-        excerpt: 'We benchmarked 1536-dimensional OpenAI embeddings against Atlas vector indexes with cosine similarity...'
-      }
-    ];
+  /**
+   * Delete a chat session and all its messages.
+   */
+  async deleteSession(sessionId) {
+    const res = await apiClient.delete(`${BASE}/sessions/${sessionId}`);
+    return res.data;
+  },
 
-    if (questionText.toLowerCase().includes('deadline') || questionText.toLowerCase().includes('sarah')) {
-      answerText = 'Sarah Jenkins has a deadline of Friday, September 4th to finish the BullMQ worker retry configuration.';
-      citations = [
-        {
-          segmentId: 'seg_09',
-          speaker: 'Rahul Sharma',
-          timestamp: 581,
-          timecode: '00:09:41',
-          excerpt: 'Sarah, can you finish the BullMQ worker retry configuration by Friday, September 4th?'
-        }
-      ];
+  /**
+   * Get all messages for a session.
+   */
+  async getMessages(sessionId) {
+    const res = await apiClient.get(`${BASE}/sessions/${sessionId}/messages`);
+    return res.data || [];
+  },
+
+  /**
+   * Load chat history for a content item (used by AskAITab).
+   * Returns a flat merged array of messages from the most recent session.
+   */
+  async getChatHistory(contentId) {
+    try {
+      const sessions = await chatService.getSessions(contentId);
+      if (!sessions || sessions.length === 0) return [];
+      // Get messages from the most recent session
+      const latestSession = sessions[0];
+      const messages = await chatService.getMessages(latestSession.id || latestSession._id);
+      // Normalize to AskAITab's expected format:
+      // AskAITab expects: { id, sender ('USER'|'ASSISTANT'), message, citations }
+      return (messages || []).map((m) => ({
+        id: m.id || m._id,
+        sender: m.role,               // 'USER' | 'ASSISTANT'
+        message: m.content,
+        citations: (m.citations || []).map((c) => ({
+          speaker: c.speakerName,
+          speakerLabel: c.speakerLabel,
+          timestamp: c.timestamp,
+          timecode: c.timecode,
+          excerpt: c.excerpt,
+          chunkId: c.chunkId,
+          score: c.score
+        })),
+        grounded: m.grounded,
+        tokensUsed: m.tokensUsed,
+        createdAt: m.createdAt,
+        sessionId: latestSession.id || latestSession._id
+      }));
+    } catch (err) {
+      console.error('[chatService.getChatHistory] failed:', err);
+      return [];
     }
+  },
 
-    const aiMsg = {
-      id: `msg_${Date.now() + 1}`,
+  /**
+   * Send a question and receive a grounded RAG answer.
+   * AskAITab calls: chatService.askQuestion(contentId, text)
+   *
+   * Returns the assistant message in AskAITab-compatible format.
+   */
+  async askQuestion(contentId, questionText, sessionId = null) {
+    const res = await apiClient.post(`${BASE}/ask`, {
+      contentId,
+      sessionId,
+      question: questionText
+    });
+
+    const { sessionId: activeSessionId, assistantMessage } = res.data || {};
+    if (!assistantMessage) return { id: null, sender: 'ASSISTANT', message: '', citations: [] };
+
+    return {
+      id: assistantMessage.id || assistantMessage._id,
       sender: 'ASSISTANT',
-      message: answerText,
-      timestamp: new Date().toISOString(),
-      citations
+      message: assistantMessage.content,
+      citations: (assistantMessage.citations || []).map((c) => ({
+        speaker: c.speakerName,
+        speakerLabel: c.speakerLabel,
+        timestamp: c.timestamp,
+        timecode: c.timecode,
+        excerpt: c.excerpt,
+        chunkId: c.chunkId,
+        score: c.score
+      })),
+      grounded: assistantMessage.grounded,
+      tokensUsed: assistantMessage.tokensUsed,
+      sessionId: activeSessionId,
+      createdAt: assistantMessage.createdAt
     };
-    localSessions[key].push(aiMsg);
-
-    return createApiResponse(aiMsg);
   }
 };

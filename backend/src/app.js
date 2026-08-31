@@ -8,13 +8,16 @@ import { swaggerSpec } from './config/swagger.js';
 import { config } from './config/environment.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorMiddleware.js';
 import { globalLimiter } from './middlewares/rateLimiter.js';
+import { correlationMiddleware } from './middlewares/correlationMiddleware.js';
 
 // Route imports
 import apiRoutes from './routes/index.js';
 
 const app = express();
 
+app.use(correlationMiddleware);
 app.use(helmet());
+
 app.use(cors(config.cors));
 app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));

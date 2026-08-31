@@ -38,6 +38,18 @@ class Settings(BaseSettings):
     LLM_MAX_OUTPUT_TOKENS: int = 4096
     MAX_TRANSCRIPT_TOKENS_PER_CHUNK: int = 3000
 
+    # Embeddings & Vector Search Settings
+    EMBEDDING_PROVIDER: str = "heuristic"  # 'heuristic', 'gemini', or 'openai'
+    EMBEDDING_MODEL: str = "text-embedding-004"
+    EMBEDDING_DIMENSIONS: int = 768
+    EMBEDDING_API_KEY: Optional[str] = None
+
+    # RAG Settings
+    RAG_TOP_K: int = 8
+    RAG_SIMILARITY_THRESHOLD: float = 0.35
+    MAX_RAG_CONTEXT_TOKENS: int = 3000
+    MAX_CHAT_HISTORY_MESSAGES: int = 6
+
     # Resource Limits
     MAX_FILE_SIZE_BYTES: int = 524288000  # 500 MB
     MAX_AUDIO_DURATION_SECONDS: int = 14400  # 4 Hours

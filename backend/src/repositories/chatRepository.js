@@ -16,8 +16,19 @@ export const chatRepository = {
     return ChatSession.create({ userId, contentId, title });
   },
 
-  async findMessagesBySession(sessionId) {
-    return ChatMessage.find({ sessionId }).sort({ createdAt: 1 }).exec();
+  async updateSession(sessionId, updates) {
+    return ChatSession.findByIdAndUpdate(sessionId, updates, { new: true }).exec();
+  },
+
+  async deleteSession(sessionId) {
+    await ChatMessage.deleteMany({ sessionId });
+    return ChatSession.findByIdAndDelete(sessionId).exec();
+  },
+
+  async findMessagesBySession(sessionId, limit = null) {
+    const q = ChatMessage.find({ sessionId }).sort({ createdAt: 1 });
+    if (limit) q.limit(limit);
+    return q.exec();
   },
 
   async createMessage(data) {
@@ -38,3 +49,4 @@ export const chatRepository = {
     ]);
   }
 };
+

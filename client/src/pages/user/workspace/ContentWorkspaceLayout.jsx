@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { contentService } from '../../../services/contentService.js';
 import { MediaPlayer } from '../../../components/media/MediaPlayer.jsx';
 import { Tabs } from '../../../components/ui/Tabs.jsx';
 import { Badge } from '../../../components/ui/Badge.jsx';
+import { Button } from '../../../components/ui/Button.jsx';
 import { LoadingState } from '../../../components/common/LoadingState.jsx';
+import { CommentsPanel } from '../../../components/collaboration/CommentsPanel.jsx';
 import {
   AlignLeft,
   FileText,
@@ -14,7 +17,8 @@ import {
   CheckCircle2,
   CheckSquare,
   FileCheck,
-  MessageSquare
+  MessageSquare,
+  MessageCircle
 } from 'lucide-react';
 import { formatDate, formatTimecode } from '../../../utils/formatters.js';
 
@@ -24,6 +28,9 @@ export function ContentWorkspaceLayout() {
   const location = useLocation();
   const [content, setContent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showNotesDrawer, setShowNotesDrawer] = useState(false);
+
+  const currentSeconds = useSelector((state) => state.workspace.currentPlaybackSeconds || 0);
 
   useEffect(() => {
     async function load() {
@@ -97,7 +104,16 @@ export function ContentWorkspaceLayout() {
             </h1>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
+            <Button
+              variant={showNotesDrawer ? 'primary' : 'outline'}
+              size="sm"
+              icon={MessageCircle}
+              onClick={() => setShowNotesDrawer(!showNotesDrawer)}
+            >
+              {showNotesDrawer ? 'Hide Team Notes' : 'Team Notes & Comments'}
+            </Button>
+
             <span className="text-xs font-mono text-emerald-800 bg-emerald-50 border border-emerald-300 px-3 py-1 font-bold">
               {content.processingStatus}
             </span>
@@ -117,9 +133,20 @@ export function ContentWorkspaceLayout() {
         <Tabs tabs={tabs} activeTab={activeTab} onChange={handleTabChange} />
       </div>
 
-      {/* Tab Specific Content Pane */}
-      <div className="min-h-[400px]">
-        <Outlet context={{ content }} />
+      {/* Tab Specific Content Pane + Optional Collaboration Drawer */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[400px]">
+        <div className={showNotesDrawer ? 'lg:col-span-8' : 'lg:col-span-12'}>
+          <Outlet context={{ content }} />
+        </div>
+
+        {showNotesDrawer && (
+          <div className="lg:col-span-4 h-full">
+            <CommentsPanel
+              contentId={id}
+              currentTimestamp={currentSeconds}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -8,10 +8,14 @@ import { processingJobRepository } from '../repositories/processingJobRepository
 import { auditLogRepository } from '../repositories/auditLogRepository.js';
 import { ApiError } from '../utils/ApiError.js';
 
+import { Workspace } from '../models/Workspace.js';
+import { EmbeddingChunk } from '../models/EmbeddingChunk.js';
+import { ChatMessage } from '../models/ChatMessage.js';
+
 export const adminService = {
   async getMetricsOverview() {
     // High-performance MongoDB aggregation pipeline for system overview
-    const [userStats, contentStats, jobStats, reportCount] = await Promise.all([
+    const [userStats, contentStats, jobStats, reportCount, workspaceCount, embeddingsCount, chatMessagesCount] = await Promise.all([
       User.aggregate([
         {
           $group: {
@@ -42,7 +46,10 @@ export const adminService = {
           }
         }
       ]),
-      Report.countDocuments()
+      Report.countDocuments(),
+      Workspace.countDocuments(),
+      EmbeddingChunk.countDocuments(),
+      ChatMessage.countDocuments()
     ]);
 
     const u = userStats[0] || { totalUsers: 0, activeUsers: 0, totalStorageUsed: 0 };
@@ -52,16 +59,20 @@ export const adminService = {
     return {
       totalUsers: u.totalUsers,
       activeUsers: u.activeUsers,
+      totalWorkspaces: workspaceCount,
       totalContent: c.totalContent,
       completedContent: c.completedContent,
       totalReports: reportCount,
+      totalEmbeddings: embeddingsCount,
+      totalRagQueries: chatMessagesCount,
       activeJobs: j.activeJobs,
       failedJobs: j.failedJobs,
       totalStorageBytes: u.totalStorageUsed || 1048576000,
-      estimatedCostUsd: Number((c.totalContent * 0.45 + 5.0).toFixed(2)),
+      estimatedCostUsd: Number((c.totalContent * 0.45 + embeddingsCount * 0.001 + 5.0).toFixed(2)),
       systemHealth: j.failedJobs > 5 ? 'DEGRADED' : 'HEALTHY'
     };
   },
+
 
   async getAllUsers(query) {
     const page = Math.max(1, parseInt(query.page, 10) || 1);

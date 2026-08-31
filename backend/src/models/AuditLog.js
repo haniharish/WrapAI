@@ -17,19 +17,23 @@ const auditLogSchema = new mongoose.Schema(
         'USER_PASSWORD_CHANGE',
         'CONTENT_CREATED',
         'CONTENT_UPDATED',
+        'CONTENT_RENAMED',
         'CONTENT_DELETED',
         'SPEAKER_RENAMED',
         'ACTION_ITEM_UPDATED',
         'REPORT_GENERATED',
         'CHAT_MESSAGE_SENT',
         'ADMIN_USER_STATUS_CHANGE',
-        'ADMIN_JOB_RETRY'
+        'ADMIN_JOB_RETRY',
+        'PROCESSING_JOB_ENQUEUED',
+        'PROCESSING_JOB_RETRIED',
+        'PROCESSING_JOB_CANCELLED'
       ]
     },
     resourceType: {
       type: String,
       required: true,
-      enum: ['USER', 'CONTENT', 'TRANSCRIPT', 'REPORT', 'CHAT', 'JOB', 'SYSTEM']
+      enum: ['USER', 'CONTENT', 'TRANSCRIPT', 'REPORT', 'CHAT', 'JOB', 'PROCESSING_JOB', 'SYSTEM']
     },
     resourceId: {
       type: String,

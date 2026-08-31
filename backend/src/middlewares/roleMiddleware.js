@@ -13,3 +13,6 @@ export function authorize(...allowedRoles) {
     next();
   };
 }
+
+export const requireRole = authorize;
+

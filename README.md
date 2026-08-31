@@ -58,7 +58,8 @@ wrapAI/
 │   ├── phase-2-backend.md
 │   ├── phase-3-database.md
 │   ├── phase-4-authentication.md
-│   └── phase-5-file-upload.md
+│   ├── phase-5-file-upload.md
+│   └── phase-6-processing.md
 ├── client/                      # React 18 Single Page Application
 │   ├── src/
 │   │   ├── components/          # Reusable UI, Layout, Media, and Common components
@@ -73,22 +74,25 @@ wrapAI/
 │   └── vite.config.js
 ├── backend/                     # Node.js + Express REST API Gateway
 │   ├── src/
-│   │   ├── config/              # DB connection, env config, Swagger specs
+│   │   ├── config/              # DB connection, Redis connection, env config, Swagger specs
 │   │   ├── constants/           # Roles, status codes, content types
-│   │   ├── controllers/         # Request/response controllers
+│   │   ├── controllers/         # Request/response controllers (Auth, Content, Processing, Admin, etc.)
 │   │   ├── database/            # Database seed CLI & migration routines
 │   │   ├── middlewares/         # Auth, RBAC, Ownership, Validation, Rate limiter, Upload multer
-│   │   ├── models/              # 12 Mongoose schemas (User, Content, Transcript, Segment, Speaker, etc.)
+│   │   ├── models/              # 12 Mongoose schemas (User, Content, ProcessingJob, Transcript, etc.)
+│   │   ├── queues/              # BullMQ queue definitions (contentProcessingQueue)
 │   │   ├── repositories/        # Database query abstractions & aggregations
 │   │   ├── routes/              # Modular Express routes
-│   │   ├── services/            # Pure business logic services (Auth, User, Storage, Content, etc.)
+│   │   ├── services/            # Pure business logic services (ProcessingQueue, Storage, Content, etc.)
+│   │   ├── workers/             # Dedicated background worker processes
 │   │   ├── utils/               # ApiError, responseHandler, logger
 │   │   ├── validators/          # Input schema validation
 │   │   ├── app.js               # Express application configuration
 │   │   └── server.js            # Server listener & database bootstrap
-│   ├── tests/                   # 12 Jest + Supertest test suites (43 tests)
+│   ├── tests/                   # 13 Jest + Supertest test suites (50 tests)
 │   ├── package.json
 │   └── .env.example
+├── docker-compose.yml           # Redis, API Gateway, and Background Worker orchestration
 └── README.md
 ```
 
@@ -101,7 +105,7 @@ wrapAI/
 - [x] **Phase 3**: MongoDB Atlas Database & Schemas
 - [x] **Phase 4**: Authentication & RBAC (JWT / bcrypt / Refresh Cookies)
 - [x] **Phase 5**: File Upload & Object Storage (S3 / Storage Abstraction)
-- [ ] **Phase 6**: Redis & BullMQ Processing Infrastructure
+- [x] **Phase 6**: Redis & BullMQ Processing Infrastructure
 - [ ] **Phase 7**: Speech-to-Text (Whisper)
 - [ ] **Phase 8**: Speaker Diarization & Timestamp Alignment (pyannote)
 - [ ] **Phase 9**: Structured LLM Content Analysis
@@ -111,3 +115,4 @@ wrapAI/
 - [ ] **Phase 13**: Admin Dashboard & Telemetry
 - [ ] **Phase 14**: Testing, Security & Optimization
 - [ ] **Phase 15**: Docker, CI/CD & Cloud Deployment
+

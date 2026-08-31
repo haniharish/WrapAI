@@ -80,3 +80,6 @@ export function createApiError(code, message, details = []) {
   error.details = details;
   throw error;
 }
+
+export default apiClient;
+

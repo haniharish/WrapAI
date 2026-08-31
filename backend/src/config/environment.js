@@ -8,6 +8,21 @@ export const config = {
   database: {
     uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/wrapai'
   },
+  redis: {
+    url: process.env.REDIS_URL || null,
+    host: process.env.REDIS_HOST || '127.0.0.1',
+    port: parseInt(process.env.REDIS_PORT, 10) || 6379,
+    password: process.env.REDIS_PASSWORD || undefined,
+    username: process.env.REDIS_USERNAME || undefined,
+    tls: process.env.REDIS_TLS === 'true' ? {} : undefined
+  },
+  queue: {
+    name: process.env.PROCESSING_QUEUE_NAME || 'content-processing',
+    concurrency: parseInt(process.env.WORKER_CONCURRENCY, 10) || 2,
+    jobAttempts: parseInt(process.env.JOB_ATTEMPTS, 10) || 3,
+    backoffDelay: parseInt(process.env.JOB_BACKOFF_DELAY, 10) || 2000,
+    mockFailure: process.env.MOCK_PROCESSING_FAILURE === 'true'
+  },
   jwt: {
     secret: process.env.JWT_SECRET || 'wrapai_jwt_secret_development_key_minimum_32_chars_2026',
     expiresIn: process.env.JWT_EXPIRES_IN || '15m',
@@ -20,11 +35,11 @@ export const config = {
     s3Bucket: process.env.AWS_S3_BUCKET || 'wrapai-content-storage',
     accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-    signedUrlExpiresIn: parseInt(process.env.SIGNED_URL_EXPIRATION, 10) || 3600, // 1 hour
-    maxAudioSizeBytes: parseInt(process.env.MAX_AUDIO_SIZE, 10) || 100 * 1024 * 1024, // 100MB
-    maxVideoSizeBytes: parseInt(process.env.MAX_VIDEO_SIZE, 10) || 500 * 1024 * 1024, // 500MB
-    maxDocumentSizeBytes: parseInt(process.env.MAX_DOCUMENT_SIZE, 10) || 50 * 1024 * 1024, // 50MB
-    maxTextLength: parseInt(process.env.MAX_TEXT_LENGTH, 10) || 100000 // 100k chars
+    signedUrlExpiresIn: parseInt(process.env.SIGNED_URL_EXPIRATION, 10) || 3600,
+    maxAudioSizeBytes: parseInt(process.env.MAX_AUDIO_SIZE, 10) || 100 * 1024 * 1024,
+    maxVideoSizeBytes: parseInt(process.env.MAX_VIDEO_SIZE, 10) || 500 * 1024 * 1024,
+    maxDocumentSizeBytes: parseInt(process.env.MAX_DOCUMENT_SIZE, 10) || 50 * 1024 * 1024,
+    maxTextLength: parseInt(process.env.MAX_TEXT_LENGTH, 10) || 100000
   },
   rateLimit: {
     windowMs: 15 * 60 * 1000,

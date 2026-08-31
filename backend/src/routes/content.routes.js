@@ -19,6 +19,7 @@ router.post('/upload', upload.single('file'), asyncHandler(contentController.upl
 router.post('/text', validate(validateTextSubmission), asyncHandler(contentController.createText));
 router.post('/url', validate(validateUrlSubmission), asyncHandler(contentController.createUrl));
 router.get('/:id', asyncHandler(contentController.getById));
+router.get('/:id/processing', asyncHandler(contentController.getProcessingStatus));
 router.patch('/:id', validate(validateUpdateContent), asyncHandler(contentController.update));
 router.delete('/:id', asyncHandler(contentController.delete));
 router.get('/:id/access', asyncHandler(contentController.getAccess));

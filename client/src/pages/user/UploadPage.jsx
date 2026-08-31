@@ -150,16 +150,16 @@ export function UploadPage() {
       }
 
       setUploadProgress(100);
-      setSuccessMessage('Content successfully ingested into WrapAI repository!');
+      setSuccessMessage('Content successfully ingested into WrapAI repository! Initializing processing...');
       
-      // Short delay for user to see 100% completion before navigation
+      // Navigate to processing status page
       setTimeout(() => {
         if (res && res.data && res.data.id) {
-          navigate(`/content`);
+          navigate(`/processing/${res.data.id}`);
         } else {
           navigate('/content');
         }
-      }, 1000);
+      }, 800);
     } catch (err) {
       if (err.name === 'CanceledError' || err.message?.includes('canceled')) {
         setErrorMessage('Upload was cancelled.');

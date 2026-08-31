@@ -2,6 +2,7 @@ import { contentRepository } from '../repositories/contentRepository.js';
 import { userRepository } from '../repositories/userRepository.js';
 import { auditLogRepository } from '../repositories/auditLogRepository.js';
 import { storageService } from './storageService.js';
+import { processingQueueService } from './processingQueueService.js';
 import { ApiError } from '../utils/ApiError.js';
 import { config } from '../config/environment.js';
 import { CONTENT_TYPES, PROCESSING_STATUS } from '../constants/contentTypes.js';
@@ -67,7 +68,6 @@ export const contentService = {
       throw ApiError.notFound('Content not found');
     }
 
-    // Multi-tenant Ownership check
     if (content.userId.toString() !== userId && userRole !== 'ADMIN') {
       throw ApiError.forbidden('You do not have permission to view this content');
     }
@@ -100,6 +100,9 @@ export const contentService = {
       metadata: { title: content.title, contentType: content.contentType }
     });
 
+    // Auto-enqueue processing job in Phase 6
+    await processingQueueService.enqueueContentProcessing(content._id, userId).catch(() => {});
+
     return content;
   },
 
@@ -129,7 +132,6 @@ export const contentService = {
     });
 
     try {
-      // Create MongoDB Content Record
       const content = await contentRepository.create({
         userId,
         title,
@@ -146,11 +148,9 @@ export const contentService = {
         tags: body.tags ? (Array.isArray(body.tags) ? body.tags : body.tags.split(',').map(t => t.trim())) : []
       });
 
-      // Update user storage footprint
       user.storageUsedBytes = newTotalStorage;
       await user.save();
 
-      // Audit Log
       await auditLogRepository.createLog({
         userId,
         action: 'CONTENT_CREATED',
@@ -159,9 +159,11 @@ export const contentService = {
         metadata: { title: content.title, contentType, fileSizeBytes: file.size }
       });
 
+      // Auto-enqueue processing job in Phase 6
+      await processingQueueService.enqueueContentProcessing(content._id, userId).catch(() => {});
+
       return content;
     } catch (dbErr) {
-      // Cleanup orphaned storage object if MongoDB insertion fails
       await storageService.deleteFile(storageKey);
       throw dbErr;
     }
@@ -193,6 +195,9 @@ export const contentService = {
       metadata: { title: content.title, contentType: CONTENT_TYPES.TEXT }
     });
 
+    // Auto-enqueue processing job in Phase 6
+    await processingQueueService.enqueueContentProcessing(content._id, userId).catch(() => {});
+
     return content;
   },
 
@@ -219,6 +224,9 @@ export const contentService = {
       resourceId: content._id.toString(),
       metadata: { title: content.title, contentType: CONTENT_TYPES.URL, sourceUrl: url }
     });
+
+    // Auto-enqueue processing job in Phase 6
+    await processingQueueService.enqueueContentProcessing(content._id, userId).catch(() => {});
 
     return content;
   },
@@ -247,15 +255,12 @@ export const contentService = {
   async deleteContent(contentId, userId, userRole) {
     const content = await this.getContentById(contentId, userId, userRole);
 
-    // Soft delete in DB
     await contentRepository.softDelete(contentId, userId);
 
-    // Delete binary object from object storage
     if (content.storageKey) {
       await storageService.deleteFile(content.storageKey);
     }
 
-    // Reclaim storage quota
     if (content.fileSizeBytes > 0) {
       const user = await userRepository.findById(content.userId);
       if (user) {

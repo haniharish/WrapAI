@@ -1,4 +1,5 @@
 import { contentService } from '../services/contentService.js';
+import { processingQueueService } from '../services/processingQueueService.js';
 import { sendSuccess } from '../utils/responseHandler.js';
 import { STATUS_CODES } from '../constants/statusCodes.js';
 
@@ -55,5 +56,13 @@ export const contentController = {
     const userId = req.user.id || req.user._id.toString();
     const result = await contentService.getAccessUrl(req.params.id, userId, req.user.role);
     sendSuccess(res, result, 'Secure media access URL generated');
+  },
+
+  async getProcessingStatus(req, res) {
+    const userId = req.user.id || req.user._id.toString();
+    const contentId = req.params.contentId || req.params.id;
+    const job = await processingQueueService.getJobByContentId(contentId, userId, req.user.role);
+    sendSuccess(res, job, 'Content processing job status retrieved successfully');
   }
 };
+

@@ -8,6 +8,7 @@ import { analysisRepository } from '../repositories/analysisRepository.js';
 import { storageService } from '../services/storageService.js';
 import { aiService } from '../services/aiService.js';
 import { embeddingService } from '../services/embeddingService.js';
+import { youtubeService } from '../services/youtubeService.js';
 import { PROCESSING_STATUS } from '../constants/contentTypes.js';
 import { logger } from '../utils/logger.js';
 
@@ -133,6 +134,42 @@ export async function executeMockProcessingPipeline(jobRecord, bullJob = null) {
         ],
         segments: textSegments
       };
+    } else if (content.sourceUrl && youtubeService.isYouTubeUrl(content.sourceUrl)) {
+      jobRecord.logs.push(`[${new Date().toISOString()}] Detected YouTube Lecture/Media stream. Extracting metadata and time-aligned captions.`);
+      await jobRecord.save();
+
+      // 1. Fetch metadata (real video title, duration, author)
+      const meta = await youtubeService.fetchVideoMetadata(content.sourceUrl);
+      if (meta) {
+        if (!content.title || content.title === 'Linked Media Stream' || content.title.startsWith('YouTube Video')) {
+          content.title = meta.title;
+          await contentRepository.updateById(content._id, {
+            title: meta.title,
+            mediaDurationSeconds: meta.durationSeconds || calculatedDuration
+          });
+        }
+        calculatedDuration = meta.durationSeconds || calculatedDuration;
+      }
+
+      // 2. Fetch real captions/transcript
+      try {
+        transcriptionResult = await youtubeService.fetchTranscript(content.sourceUrl);
+        transcriptionResult.contentId = content._id.toString();
+        if (!calculatedDuration && transcriptionResult.durationSeconds) {
+          calculatedDuration = transcriptionResult.durationSeconds;
+        }
+        jobRecord.logs.push(`[${new Date().toISOString()}] YouTube transcript extracted successfully (${transcriptionResult.segments.length} segments, ${transcriptionResult.durationSeconds}s)`);
+        await jobRecord.save();
+      } catch (ytErr) {
+        logger.warn(`Direct YouTube caption fetch failed (${ytErr.message}). Fallback to speech-to-text inference.`);
+        transcriptionResult = await aiService.requestTranscription({
+          contentId: content._id.toString(),
+          mediaUrl: content.sourceUrl,
+          contentType: content.contentType,
+          language: content.language || 'auto',
+          enableDiarization: true
+        });
+      }
     } else {
       let mediaUrl = null;
       let localPath = null;

@@ -4,6 +4,7 @@ import { auditLogRepository } from '../repositories/auditLogRepository.js';
 import { storageService } from './storageService.js';
 import { processingQueueService } from './processingQueueService.js';
 import { embeddingService } from './embeddingService.js';
+import { youtubeService } from './youtubeService.js';
 import { chatRepository } from '../repositories/chatRepository.js';
 import { ApiError } from '../utils/ApiError.js';
 import { config } from '../config/environment.js';
@@ -207,13 +208,35 @@ export const contentService = {
     const user = await userRepository.findById(userId);
     if (!user) throw ApiError.notFound('User not found');
 
+    let resolvedTitle = title ? title.trim() : '';
+    let durationSec = null;
+
+    if (youtubeService.isYouTubeUrl(url)) {
+      try {
+        const meta = await youtubeService.fetchVideoMetadata(url);
+        if (meta) {
+          if (!resolvedTitle || resolvedTitle === 'Linked Media Stream' || resolvedTitle === 'YouTube Video') {
+            resolvedTitle = meta.title;
+          }
+          durationSec = meta.durationSeconds;
+        }
+      } catch {
+        // Fallback to title
+      }
+    }
+
+    if (!resolvedTitle) {
+      resolvedTitle = 'Linked Media Stream';
+    }
+
     const content = await contentRepository.create({
       userId,
-      title: title.trim(),
+      title: resolvedTitle,
       description: description || '',
       contentType: CONTENT_TYPES.URL,
       sourceType: 'URL',
       sourceUrl: url.trim(),
+      mediaDurationSeconds: durationSec,
       processingStatus: PROCESSING_STATUS.UPLOADED,
       language: language || 'en',
       tags: tags ? (Array.isArray(tags) ? tags : tags.split(',').map(t => t.trim())) : []
@@ -227,7 +250,7 @@ export const contentService = {
       metadata: { title: content.title, contentType: CONTENT_TYPES.URL, sourceUrl: url }
     });
 
-    // Auto-enqueue processing job in Phase 6
+    // Auto-enqueue processing job
     await processingQueueService.enqueueContentProcessing(content._id, userId).catch(() => {});
 
     return content;

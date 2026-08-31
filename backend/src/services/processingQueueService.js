@@ -71,8 +71,21 @@ export const processingQueueService = {
       logger.info('Content processing job successfully added to BullMQ', { uniqueJobId, contentId: contentId.toString() });
     } catch (queueErr) {
       logger.warn('Failed to add job to Redis BullMQ (Queue unavailable / Offline mode):', { error: queueErr.message });
-      // In offline/test mode without active Redis, the job record exists and is ready for worker pickup
     }
+
+    // Dynamic self-healing processor trigger:
+    // Ensures immediate asynchronous execution even if Redis or separate BullMQ worker daemon is not running
+    setTimeout(async () => {
+      try {
+        const freshJob = await processingJobRepository.findById(processingJob._id);
+        if (freshJob && freshJob.status === 'QUEUED') {
+          const { executeMockProcessingPipeline } = await import('../workers/processingWorker.js');
+          await executeMockProcessingPipeline(freshJob);
+        }
+      } catch (procErr) {
+        logger.error('Background processing error:', { error: procErr.message });
+      }
+    }, 600);
 
     // 4. Audit Log
     await auditLogRepository.createLog({
@@ -167,6 +180,18 @@ export const processingQueueService = {
     } catch (queueErr) {
       logger.warn('Failed to re-enqueue job into BullMQ:', { error: queueErr.message });
     }
+
+    setTimeout(async () => {
+      try {
+        const freshJob = await processingJobRepository.findById(job._id);
+        if (freshJob && freshJob.status === 'QUEUED') {
+          const { executeMockProcessingPipeline } = await import('../workers/processingWorker.js');
+          await executeMockProcessingPipeline(freshJob);
+        }
+      } catch (procErr) {
+        logger.error('Background retry processing error:', { error: procErr.message });
+      }
+    }, 600);
 
     await auditLogRepository.createLog({
       userId,

@@ -1,56 +1,51 @@
-import { mockUsers } from '../mocks/mockUsers.js';
-import { mockDelay, createApiResponse } from './api.js';
+import { apiClient } from './api.js';
 
 export const authService = {
   async login(email, password) {
-    await mockDelay(400);
-    const user = mockUsers.find((u) => u.email.toLowerCase() === email.toLowerCase()) || {
-      id: 'usr_demo',
-      fullName: email.split('@')[0],
-      email: email,
-      role: email.includes('admin') ? 'ADMIN' : 'USER',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      joinedAt: new Date().toISOString(),
-      storageUsedBytes: 500000000,
-      storageLimitBytes: 5368709120,
-      contentCount: 4,
-      status: 'ACTIVE',
-      timezone: 'UTC'
-    };
-    return createApiResponse({
-      user,
-      token: 'mock_jwt_token_sample'
-    }, 'Authentication successful');
+    const response = await apiClient.post('/auth/login', { email, password });
+    if (response.data?.token) {
+      localStorage.setItem('wrapai_token', response.data.token);
+      localStorage.setItem('wrapai_user', JSON.stringify(response.data.user));
+    }
+    return response;
   },
 
   async register(data) {
-    await mockDelay(500);
-    const newUser = {
-      id: `usr_${Date.now()}`,
-      fullName: data.fullName,
-      email: data.email,
-      role: 'USER',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      joinedAt: new Date().toISOString(),
-      storageUsedBytes: 0,
-      storageLimitBytes: 5368709120,
-      contentCount: 0,
-      status: 'ACTIVE',
-      timezone: 'UTC'
-    };
-    return createApiResponse({
-      user: newUser,
-      token: 'mock_jwt_token_sample'
-    }, 'Registration successful');
+    const response = await apiClient.post('/auth/register', data);
+    if (response.data?.token) {
+      localStorage.setItem('wrapai_token', response.data.token);
+      localStorage.setItem('wrapai_user', JSON.stringify(response.data.user));
+    }
+    return response;
   },
 
   async getCurrentUser() {
-    await mockDelay(200);
-    return createApiResponse(mockUsers[0]);
+    const response = await apiClient.get('/auth/me');
+    if (response.data) {
+      localStorage.setItem('wrapai_user', JSON.stringify(response.data));
+    }
+    return response;
   },
 
   async logout() {
-    await mockDelay(150);
-    return createApiResponse(null, 'Logged out successfully');
+    try {
+      await apiClient.post('/auth/logout');
+    } finally {
+      localStorage.removeItem('wrapai_token');
+      localStorage.removeItem('wrapai_user');
+    }
+  },
+
+  async forgotPassword(email) {
+    return apiClient.post('/auth/forgot-password', { email });
+  },
+
+  async resetPassword(token, newPassword) {
+    const response = await apiClient.post('/auth/reset-password', { token, newPassword });
+    if (response.data?.token) {
+      localStorage.setItem('wrapai_token', response.data.token);
+      localStorage.setItem('wrapai_user', JSON.stringify(response.data.user));
+    }
+    return response;
   }
 };

@@ -1,11 +1,22 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { mockUsers } from '../../mocks/mockUsers.js';
+
+const getInitialUser = () => {
+  try {
+    const raw = localStorage.getItem('wrapai_user');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const token = localStorage.getItem('wrapai_token');
+const user = getInitialUser();
 
 const initialState = {
-  isAuthenticated: true,
-  user: mockUsers[0], // Defaults to Rahul Sharma (USER)
-  token: 'mock_token_active',
-  role: 'USER' // 'USER' | 'ADMIN'
+  isAuthenticated: !!token && !!user,
+  user: user,
+  token: token,
+  role: user?.role || 'USER'
 };
 
 const authSlice = createSlice({
@@ -24,17 +35,20 @@ const authSlice = createSlice({
       state.role = null;
       state.token = null;
     },
+    updateUser: (state, action) => {
+      state.user = { ...state.user, ...action.payload };
+      if (action.payload.role) {
+        state.role = action.payload.role;
+      }
+    },
     toggleRole: (state) => {
-      if (state.role === 'USER') {
-        state.role = 'ADMIN';
-        state.user = mockUsers[1]; // Sarah Jenkins (ADMIN)
-      } else {
-        state.role = 'USER';
-        state.user = mockUsers[0]; // Rahul Sharma (USER)
+      state.role = state.role === 'ADMIN' ? 'USER' : 'ADMIN';
+      if (state.user) {
+        state.user.role = state.role;
       }
     }
   }
 });
 
-export const { loginSuccess, logout, toggleRole } = authSlice.actions;
+export const { loginSuccess, logout, updateUser, toggleRole } = authSlice.actions;
 export default authSlice.reducer;

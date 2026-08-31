@@ -1,17 +1,24 @@
-import React from 'react';
-import { useSelector } from 'react-redux';
+import React, { useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { useForm } from 'react-hook-form';
+import { userService } from '../../services/userService.js';
+import { updateUser } from '../../store/slices/authSlice.js';
 import { Card } from '../../components/ui/Card.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import { Select } from '../../components/ui/Select.jsx';
 import { ProgressBar } from '../../components/ui/ProgressBar.jsx';
-import { User, Shield, Bell, HardDrive, Trash2 } from 'lucide-react';
+import { User, Shield, HardDrive, Trash2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { formatBytes } from '../../utils/formatters.js';
 
 export function SettingsPage() {
+  const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
-  const { register, handleSubmit } = useForm({
+  const [profileMsg, setProfileMsg] = useState(null);
+  const [passwordMsg, setPasswordMsg] = useState(null);
+  const [passwordErr, setPasswordErr] = useState(null);
+
+  const { register, handleSubmit, formState: { isSubmitting } } = useForm({
     defaultValues: {
       fullName: user?.fullName || 'Rahul Sharma',
       email: user?.email || 'rahul@wrapai.io',
@@ -19,8 +26,37 @@ export function SettingsPage() {
     }
   });
 
-  const onSubmit = () => {
-    alert('Settings updated successfully in mock state.');
+  const {
+    register: registerPassword,
+    handleSubmit: handlePasswordSubmit,
+    reset: resetPasswordForm,
+    formState: { errors: passErrors, isSubmitting: isPassSubmitting }
+  } = useForm();
+
+  const onProfileSubmit = async (data) => {
+    setProfileMsg(null);
+    try {
+      const res = await userService.updateProfile({
+        fullName: data.fullName,
+        timezone: data.timezone
+      });
+      dispatch(updateUser(res.data));
+      setProfileMsg('Profile details updated successfully.');
+    } catch (err) {
+      alert(err.message || 'Failed to update profile');
+    }
+  };
+
+  const onPasswordSubmit = async (data) => {
+    setPasswordMsg(null);
+    setPasswordErr(null);
+    try {
+      await userService.changePassword(data.currentPassword, data.newPassword);
+      setPasswordMsg('Password changed successfully.');
+      resetPasswordForm();
+    } catch (err) {
+      setPasswordErr(err.message || 'Failed to update password');
+    }
   };
 
   const usedBytes = user?.storageUsedBytes || 1284505600;
@@ -43,9 +79,16 @@ export function SettingsPage() {
           <h2 className="font-display text-2xl uppercase tracking-wide text-brand-navy">Profile Details</h2>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {profileMsg && (
+          <div className="mb-6 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center space-x-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>{profileMsg}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit(onProfileSubmit)} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input label="Full Name" {...register('fullName')} />
+            <Input label="Full Name" {...register('fullName', { required: true })} />
             <Input label="Email Address" type="email" disabled {...register('email')} />
           </div>
 
@@ -61,7 +104,7 @@ export function SettingsPage() {
           />
 
           <div className="pt-2 flex justify-end">
-            <Button type="submit" variant="primary" size="sm">Save Profile</Button>
+            <Button type="submit" variant="primary" size="sm" isLoading={isSubmitting}>Save Profile</Button>
           </div>
         </form>
       </Card>
@@ -88,14 +131,42 @@ export function SettingsPage() {
           <h2 className="font-display text-2xl uppercase tracking-wide text-brand-navy">Security & Password</h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Input label="Current Password" type="password" placeholder="••••••••" />
-          <Input label="New Password" type="password" placeholder="••••••••" />
-        </div>
+        {passwordMsg && (
+          <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center space-x-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>{passwordMsg}</span>
+          </div>
+        )}
 
-        <div className="pt-4 flex justify-end">
-          <Button variant="outline" size="sm">Change Password</Button>
-        </div>
+        {passwordErr && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-xs flex items-center space-x-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{passwordErr}</span>
+          </div>
+        )}
+
+        <form onSubmit={handlePasswordSubmit(onPasswordSubmit)} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Current Password"
+              type="password"
+              placeholder="••••••••"
+              error={passErrors.currentPassword?.message}
+              {...registerPassword('currentPassword', { required: 'Current password is required' })}
+            />
+            <Input
+              label="New Password"
+              type="password"
+              placeholder="••••••••"
+              error={passErrors.newPassword?.message}
+              {...registerPassword('newPassword', { required: 'New password is required', minLength: { value: 6, message: 'Minimum 6 characters' } })}
+            />
+          </div>
+
+          <div className="pt-4 flex justify-end">
+            <Button type="submit" variant="outline" size="sm" isLoading={isPassSubmitting}>Change Password</Button>
+          </div>
+        </form>
       </Card>
 
       {/* 4. Danger Zone */}
@@ -107,7 +178,7 @@ export function SettingsPage() {
         <p className="text-xs text-red-800 mb-4">
           Permanently delete your account and all associated audio, video, transcripts, and intelligence reports. This action is irreversible.
         </p>
-        <Button variant="danger" size="sm">Delete Account</Button>
+        <Button variant="danger" size="sm" onClick={() => alert('Account deletion requested.')}>Delete Account</Button>
       </Card>
     </div>
   );

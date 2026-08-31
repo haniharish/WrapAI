@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { ROLES, USER_STATUS } from '../constants/roles.js';
 
 const userSchema = new mongoose.Schema(
@@ -53,6 +54,20 @@ const userSchema = new mongoose.Schema(
     preferences: {
       type: mongoose.Schema.Types.Mixed,
       default: { theme: 'light', emailNotifications: true, autoSummarize: true }
+    },
+    lastLoginAt: {
+      type: Date,
+      default: null
+    },
+    passwordResetToken: {
+      type: String,
+      select: false,
+      default: null
+    },
+    passwordResetExpires: {
+      type: Date,
+      select: false,
+      default: null
     }
   },
   {
@@ -63,6 +78,8 @@ const userSchema = new mongoose.Schema(
         delete ret._id;
         delete ret.__v;
         delete ret.passwordHash;
+        delete ret.passwordResetToken;
+        delete ret.passwordResetExpires;
         return ret;
       }
     }
@@ -79,6 +96,13 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 userSchema.statics.hashPassword = async function (plainPassword) {
   const salt = await bcrypt.genSalt(12);
   return bcrypt.hash(plainPassword, salt);
+};
+
+userSchema.methods.createPasswordResetToken = function () {
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  this.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+  this.passwordResetExpires = Date.now() + 60 * 60 * 1000; // 1 hour
+  return resetToken;
 };
 
 export const User = mongoose.model('User', userSchema);

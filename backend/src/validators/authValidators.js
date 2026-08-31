@@ -22,3 +22,22 @@ export function validateLogin(body) {
   }
   return errors;
 }
+
+export function validateForgotPassword(body) {
+  const errors = {};
+  if (!body.email || !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(body.email)) {
+    errors.email = 'Valid email address is required';
+  }
+  return errors;
+}
+
+export function validateResetPassword(body) {
+  const errors = {};
+  if (!body.token) {
+    errors.token = 'Reset token is required';
+  }
+  if (!body.newPassword || body.newPassword.length < 6) {
+    errors.newPassword = 'New password must be at least 6 characters long';
+  }
+  return errors;
+}

@@ -26,10 +26,18 @@ export function AdminUsersPage() {
     load();
   }, []);
 
-  const toggleUserStatus = (id) => {
-    setUsers((prev) =>
-      prev.map((u) => (u.id === id ? { ...u, status: u.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE' } : u))
-    );
+  const toggleUserStatus = async (id) => {
+    const target = users.find((u) => u.id === id);
+    if (!target) return;
+    const newStatus = target.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
+    try {
+      await adminService.updateUserStatus(id, newStatus);
+      setUsers((prev) =>
+        prev.map((u) => (u.id === id ? { ...u, status: newStatus } : u))
+      );
+    } catch (err) {
+      alert(err.message || 'Failed to update user status');
+    }
   };
 
   const toggleUserRole = (id) => {

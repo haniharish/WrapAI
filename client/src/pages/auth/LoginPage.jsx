@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useDispatch } from 'react-redux';
@@ -8,12 +8,13 @@ import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import { Card } from '../../components/ui/Card.jsx';
 import { AmbientBackground } from '../../components/common/AmbientBackground.jsx';
-import { Mail, Lock, Shield, User } from 'lucide-react';
+import { Mail, Lock, Shield, User, AlertCircle } from 'lucide-react';
 import { emailPattern } from '../../utils/validators.js';
 
 export function LoginPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [authError, setAuthError] = useState(null);
 
   const {
     register,
@@ -23,28 +24,31 @@ export function LoginPage() {
   } = useForm({
     defaultValues: {
       email: 'rahul@wrapai.io',
-      password: 'password123'
+      password: 'Password123'
     }
   });
 
   const onSubmit = async (data) => {
+    setAuthError(null);
     try {
       const res = await authService.login(data.email, data.password);
       dispatch(loginSuccess(res.data));
       navigate(res.data.user.role === 'ADMIN' ? '/admin' : '/dashboard');
     } catch (err) {
-      console.error(err);
+      setAuthError(err.message || 'Invalid email or password');
     }
   };
 
   const fillDemoUser = () => {
     setValue('email', 'rahul@wrapai.io');
-    setValue('password', 'password123');
+    setValue('password', 'Password123');
+    setAuthError(null);
   };
 
   const fillDemoAdmin = () => {
-    setValue('email', 'sarah.j@enterprise.com');
-    setValue('password', 'adminpassword123');
+    setValue('email', 'sarah.jenkins@wrapai.io');
+    setValue('password', 'Password123');
+    setAuthError(null);
   };
 
   return (
@@ -56,6 +60,13 @@ export function LoginPage() {
             <span className="font-display text-3xl uppercase tracking-wide text-brand-navy">Sign In</span>
             <p className="text-xs text-brand-taupe mt-1">Access your WrapAI intelligence workspace</p>
           </div>
+
+          {authError && (
+            <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-700 text-xs flex items-center space-x-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{authError}</span>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Input

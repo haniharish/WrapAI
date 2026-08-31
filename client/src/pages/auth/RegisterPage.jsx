@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useDispatch } from 'react-redux';
@@ -8,12 +8,13 @@ import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import { Card } from '../../components/ui/Card.jsx';
 import { AmbientBackground } from '../../components/common/AmbientBackground.jsx';
-import { User, Mail, Lock } from 'lucide-react';
+import { User, Mail, Lock, AlertCircle } from 'lucide-react';
 import { emailPattern } from '../../utils/validators.js';
 
 export function RegisterPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [regError, setRegError] = useState(null);
 
   const {
     register,
@@ -22,12 +23,13 @@ export function RegisterPage() {
   } = useForm();
 
   const onSubmit = async (data) => {
+    setRegError(null);
     try {
       const res = await authService.register(data);
       dispatch(loginSuccess(res.data));
       navigate('/dashboard');
     } catch (err) {
-      console.error(err);
+      setRegError(err.message || 'Registration failed');
     }
   };
 
@@ -41,6 +43,13 @@ export function RegisterPage() {
             <p className="text-xs text-brand-taupe mt-1">Start converting long-form content into clarity</p>
           </div>
 
+          {regError && (
+            <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-700 text-xs flex items-center space-x-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{regError}</span>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Input
               label="Full Name"
@@ -48,7 +57,7 @@ export function RegisterPage() {
               icon={User}
               placeholder="Rahul Sharma"
               error={errors.fullName?.message}
-              {...register('fullName', { required: 'Full name is required' })}
+              {...register('fullName', { required: 'Full name is required', minLength: { value: 2, message: 'Minimum 2 characters' } })}
             />
 
             <Input

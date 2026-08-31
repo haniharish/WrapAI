@@ -1,37 +1,31 @@
-import { mockUsers } from '../mocks/mockUsers.js';
-import { mockContent } from '../mocks/mockContent.js';
-import { mockProcessingJobs } from '../mocks/mockProcessingJobs.js';
-import { mockAnalytics } from '../mocks/mockAnalytics.js';
-import { mockDelay, createApiResponse } from './api.js';
+import { apiClient } from './api.js';
 
 export const adminService = {
   async getMetrics() {
-    await mockDelay(300);
-    return createApiResponse(mockAnalytics.overview);
+    return apiClient.get('/admin/overview');
   },
 
   async getUsers() {
-    await mockDelay(300);
-    return createApiResponse(mockUsers);
+    return apiClient.get('/admin/users');
+  },
+
+  async updateUserStatus(userId, status) {
+    return apiClient.patch(`/admin/users/${userId}/status`, { status });
   },
 
   async getContentMonitoring() {
-    await mockDelay(350);
-    return createApiResponse(mockContent);
+    return apiClient.get('/admin/content');
   },
 
   async getJobs() {
-    await mockDelay(300);
-    return createApiResponse(mockProcessingJobs);
+    return apiClient.get('/admin/processing');
   },
 
   async getAnalytics() {
-    await mockDelay(350);
-    return createApiResponse(mockAnalytics);
+    return apiClient.get('/admin/analytics');
   },
 
   async getSystemHealth() {
-    await mockDelay(250);
-    return createApiResponse(mockAnalytics.systemServices);
+    return apiClient.get('/admin/system');
   }
 };

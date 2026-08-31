@@ -5,33 +5,37 @@ WrapAI is an AI-powered content intelligence platform that transforms multi-moda
 
 ---
 
-## 🚀 Phase 1: Frontend Foundation Completed
-- **Framework**: React 18 (JavaScript), React Router v6, Tailwind CSS, Redux Toolkit
-- **Design Language**: Luxury SaaS, Editorial, Minimal, High-contrast, Anton display typography, Plus Jakarta Sans body
-- **Architecture**: Decoupled mock service layer matching the Phase 0 API Contract
-- **Dashboards**:
-  - **User Dashboard**: Overview, Ingestion suite, Content Library, Master Content Workspace (9 intelligence tabs), Reports repository, Settings.
-  - **Admin Dashboard**: System telemetry, User governance, Content monitoring, BullMQ queue inspector, Analytics, Infrastructure health monitor.
+## 🚀 Completed Phases
+- **Phase 0: Architecture & System Blueprint** (41 architectural sections + System Blueprint)
+- **Phase 1: Frontend UI & React Foundation** (React 18, Tailwind CSS, Redux Toolkit, 9 Workspace Tabs, User & Admin Dashboards)
+- **Phase 2: Node.js + Express Backend Foundation** (Layered architecture, JWT Auth, RBAC, Ownership guards, Mongoose models, Swagger docs, Jest & Supertest integration tests)
 
 ---
 
 ## 🛠️ Quick Start
 
-### 1. Install Dependencies
+### 1. Frontend (Client)
 ```bash
 cd client
 npm install
-```
-
-### 2. Run Local Development Server
-```bash
 npm run dev
 ```
-Open [http://localhost:5173/](http://localhost:5173/) in your browser.
+Runs on [http://localhost:5173/](http://localhost:5173/).
 
-### 3. Production Build
+### 2. Backend (REST API Gateway)
 ```bash
-npm run build
+cd backend
+npm install
+cp .env.example .env
+npm run dev
+```
+Runs on [http://localhost:5000/api/v1](http://localhost:5000/api/v1).  
+Interactive Swagger API documentation: [http://localhost:5000/api/v1/docs](http://localhost:5000/api/v1/docs).
+
+### 3. Run Backend Tests
+```bash
+cd backend
+npm test
 ```
 
 ---
@@ -40,7 +44,8 @@ npm run build
 ```
 wrapAI/
 ├── docs/                        # Complete Architecture & System Blueprint
-│   └── WRAPAI_ARCHITECTURE_BLUEPRINT.md
+│   ├── WRAPAI_ARCHITECTURE_BLUEPRINT.md
+│   └── phase-2-backend.md
 ├── client/                      # React 18 Single Page Application
 │   ├── src/
 │   │   ├── components/          # Reusable UI, Layout, Media, and Common components
@@ -54,6 +59,23 @@ wrapAI/
 │   ├── package.json
 │   ├── tailwind.config.js
 │   └── vite.config.js
+├── backend/                     # Node.js + Express REST API Gateway
+│   ├── src/
+│   │   ├── config/              # DB connection, env config, Swagger specs
+│   │   ├── constants/           # Roles, status codes, content types
+│   │   ├── controllers/         # Request/response controllers
+│   │   ├── middlewares/         # Auth, RBAC, Ownership, Validation, Rate limiter, Errors
+│   │   ├── models/              # User, Content, Report Mongoose schemas
+│   │   ├── repositories/        # Database query abstractions
+│   │   ├── routes/              # Modular Express routes
+│   │   ├── services/            # Pure business logic services
+│   │   ├── utils/               # ApiError, responseHandler, logger
+│   │   ├── validators/          # Input schema validation
+│   │   ├── app.js               # Express application configuration
+│   │   └── server.js            # Server listener & database bootstrap
+│   ├── tests/                   # Jest + Supertest test suites
+│   ├── package.json
+│   └── .env.example
 └── README.md
 ```
 
@@ -62,7 +84,7 @@ wrapAI/
 ## 🗺️ Roadmap & Phases
 - [x] **Phase 0**: Architecture & System Blueprint
 - [x] **Phase 1**: Frontend UI & React Foundation
-- [ ] **Phase 2**: Node.js + Express Backend Foundation
+- [x] **Phase 2**: Node.js + Express Backend Foundation
 - [ ] **Phase 3**: MongoDB Atlas Database & Schemas
 - [ ] **Phase 4**: Authentication & RBAC (JWT / bcrypt)
 - [ ] **Phase 5**: File Upload & Object Storage (S3 / Cloudinary)

@@ -100,6 +100,12 @@ class StorageService {
       return `${config.clientUrl.replace(':5173', ':5000')}/api/v1/content/stream/${encodeURIComponent(storageKey)}`;
     }
   }
+
+  getLocalFilePath(storageKey) {
+    if (!storageKey || this.isS3) return null;
+    const fullPath = path.join(this.localStorageDir, storageKey.replace(/\//g, '_'));
+    return fs.existsSync(fullPath) ? fullPath : null;
+  }
 }
 
 export const storageService = new StorageService();

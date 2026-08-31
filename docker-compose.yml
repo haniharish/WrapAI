@@ -16,7 +16,32 @@ services:
       timeout: 3s
       retries: 5
 
-  # 2. Node.js Express API Gateway Backend
+  # 2. Python FastAPI AI Microservice (Speech-to-Text & Media Preprocessing)
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: wrapai-ai-service
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      - NODE_ENV=production
+      - AI_SERVICE_API_KEY=${AI_SERVICE_API_KEY:-wrapai_internal_ai_service_secret_key_minimum_32_chars_2026}
+      - WHISPER_MODEL_SIZE=${WHISPER_MODEL_SIZE:-small}
+      - WHISPER_DEVICE=${WHISPER_DEVICE:-cpu}
+      - WHISPER_COMPUTE_TYPE=${WHISPER_COMPUTE_TYPE:-int8}
+    volumes:
+      - backend-uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # 3. Node.js Express API Gateway Backend
   backend:
     build:
       context: ./backend
@@ -34,16 +59,20 @@ services:
       - REDIS_PORT=6379
       - PROCESSING_QUEUE_NAME=content-processing
       - WORKER_CONCURRENCY=2
+      - AI_SERVICE_URL=http://ai-service:8000
+      - AI_SERVICE_API_KEY=${AI_SERVICE_API_KEY:-wrapai_internal_ai_service_secret_key_minimum_32_chars_2026}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
       - STORAGE_PROVIDER=LOCAL
     depends_on:
       redis:
         condition: service_healthy
+      ai-service:
+        condition: service_started
     volumes:
       - backend-uploads:/app/uploads
 
-  # 3. Dedicated Background Processing Worker Process
+  # 4. Dedicated Background Processing Worker Process
   worker:
     build:
       context: ./backend
@@ -58,11 +87,15 @@ services:
       - REDIS_PORT=6379
       - PROCESSING_QUEUE_NAME=content-processing
       - WORKER_CONCURRENCY=2
+      - AI_SERVICE_URL=http://ai-service:8000
+      - AI_SERVICE_API_KEY=${AI_SERVICE_API_KEY:-wrapai_internal_ai_service_secret_key_minimum_32_chars_2026}
       - STORAGE_PROVIDER=LOCAL
     depends_on:
       redis:
         condition: service_healthy
       backend:
+        condition: service_started
+      ai-service:
         condition: service_started
     volumes:
       - backend-uploads:/app/uploads

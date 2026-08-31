@@ -1,30 +1,22 @@
-import { mockTranscripts } from '../mocks/mockTranscripts.js';
-import { mockDelay, createApiResponse, createApiError } from './api.js';
-
-let localTranscripts = { ...mockTranscripts };
+import { apiClient } from './api.js';
 
 export const transcriptService = {
+  /**
+   * Fetch complete transcript metadata, speakers manifest, and timestamped segments for content
+   */
   async getTranscript(contentId) {
-    await mockDelay(300);
-    // Fallback to sample transcript if ID doesn't have custom mock
-    const t = localTranscripts[contentId] || localTranscripts['cnt_01'];
-    if (!t) createApiError('TRANSCRIPT_NOT_FOUND', 'Transcript not found');
-    return createApiResponse(t);
+    const response = await apiClient.get(`/content/${contentId}/transcript`);
+    return response; // unwrap from responseInterceptor -> { success, data: { transcript, speakers, segments } }
   },
 
-  async updateSpeakerName(contentId, speakerId, newName) {
-    await mockDelay(300);
-    const tKey = localTranscripts[contentId] ? contentId : 'cnt_01';
-    const transcript = localTranscripts[tKey];
-    if (!transcript) createApiError('TRANSCRIPT_NOT_FOUND', 'Transcript not found');
-
-    // Update speaker entry
-    transcript.speakers = transcript.speakers.map((s) => (s.id === speakerId ? { ...s, name: newName } : s));
-    // Update segments
-    transcript.segments = transcript.segments.map((seg) =>
-      seg.speakerId === speakerId ? { ...seg, speakerName: newName } : seg
-    );
-
-    return createApiResponse(transcript, 'Speaker renamed successfully across all segments');
+  /**
+   * Rename a speaker across all segments in this content
+   */
+  async updateSpeakerName(contentId, speakerLabel, displayName) {
+    const response = await apiClient.patch(`/content/${contentId}/speakers`, {
+      speakerLabel,
+      displayName
+    });
+    return response;
   }
 };

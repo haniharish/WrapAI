@@ -23,6 +23,11 @@ export const config = {
     backoffDelay: parseInt(process.env.JOB_BACKOFF_DELAY, 10) || 2000,
     mockFailure: process.env.MOCK_PROCESSING_FAILURE === 'true'
   },
+  aiService: {
+    url: process.env.AI_SERVICE_URL || 'http://localhost:8000',
+    apiKey: process.env.AI_SERVICE_API_KEY || 'wrapai_internal_ai_service_secret_key_minimum_32_chars_2026',
+    timeoutMs: parseInt(process.env.AI_SERVICE_TIMEOUT_MS, 10) || 600000
+  },
   jwt: {
     secret: process.env.JWT_SECRET || 'wrapai_jwt_secret_development_key_minimum_32_chars_2026',
     expiresIn: process.env.JWT_EXPIRES_IN || '15m',

@@ -59,7 +59,20 @@ wrapAI/
 │   ├── phase-3-database.md
 │   ├── phase-4-authentication.md
 │   ├── phase-5-file-upload.md
-│   └── phase-6-processing.md
+│   ├── phase-6-processing.md
+│   └── phase-7-ai-service.md
+├── ai-service/                  # Python FastAPI AI Microservice
+│   ├── app/
+│   │   ├── api/                 # FastAPI routes & security deps
+│   │   ├── core/                # Pydantic Settings & structured JSON logging
+│   │   ├── models/              # Pydantic schemas (TranscribeRequest, TranscribeResponse)
+│   │   ├── processors/          # FFmpeg media normalizer & temp file manager
+│   │   ├── services/            # Faster-Whisper Speech-to-Text inference engine
+│   │   └── main.py              # Application entrypoint
+│   ├── tests/                   # Pytest test suite (8 tests)
+│   ├── requirements.txt
+│   ├── Dockerfile
+│   └── README.md
 ├── client/                      # React 18 Single Page Application
 │   ├── src/
 │   │   ├── components/          # Reusable UI, Layout, Media, and Common components
@@ -83,16 +96,16 @@ wrapAI/
 │   │   ├── queues/              # BullMQ queue definitions (contentProcessingQueue)
 │   │   ├── repositories/        # Database query abstractions & aggregations
 │   │   ├── routes/              # Modular Express routes
-│   │   ├── services/            # Pure business logic services (ProcessingQueue, Storage, Content, etc.)
+│   │   ├── services/            # Pure business logic services (AIService, ProcessingQueue, Storage, etc.)
 │   │   ├── workers/             # Dedicated background worker processes
 │   │   ├── utils/               # ApiError, responseHandler, logger
 │   │   ├── validators/          # Input schema validation
 │   │   ├── app.js               # Express application configuration
 │   │   └── server.js            # Server listener & database bootstrap
-│   ├── tests/                   # 13 Jest + Supertest test suites (50 tests)
+│   ├── tests/                   # 14 Jest + Supertest test suites (55 tests)
 │   ├── package.json
 │   └── .env.example
-├── docker-compose.yml           # Redis, API Gateway, and Background Worker orchestration
+├── docker-compose.yml           # Redis, AI Service, API Gateway, and Worker orchestration
 └── README.md
 ```
 
@@ -106,7 +119,7 @@ wrapAI/
 - [x] **Phase 4**: Authentication & RBAC (JWT / bcrypt / Refresh Cookies)
 - [x] **Phase 5**: File Upload & Object Storage (S3 / Storage Abstraction)
 - [x] **Phase 6**: Redis & BullMQ Processing Infrastructure
-- [ ] **Phase 7**: Speech-to-Text (Whisper)
+- [x] **Phase 7**: Speech-to-Text (Faster-Whisper & Python AI Service)
 - [ ] **Phase 8**: Speaker Diarization & Timestamp Alignment (pyannote)
 - [ ] **Phase 9**: Structured LLM Content Analysis
 - [ ] **Phase 10**: RAG & MongoDB Atlas Vector Search
@@ -115,4 +128,5 @@ wrapAI/
 - [ ] **Phase 13**: Admin Dashboard & Telemetry
 - [ ] **Phase 14**: Testing, Security & Optimization
 - [ ] **Phase 15**: Docker, CI/CD & Cloud Deployment
+
 

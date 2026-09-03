@@ -1,7 +1,24 @@
 # WrapAI — Content & Meeting Intelligence Platform
 **"From Content to Clarity."**
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-wrapai--client.onrender.com-blue?style=for-the-badge&logo=render)](https://wrapai-client.onrender.com)
+[![API Gateway](https://img.shields.io/badge/API%20Gateway-Live%20on%20Render-green?style=for-the-badge)](https://wrapai-backend-y44w.onrender.com/api/v1/health)
+
 WrapAI is an AI-powered content intelligence platform that transforms multi-modal assets (audio, video, documents, and remote links) into word-level timestamped transcripts with speaker diarization, executive summaries, thematic breakdowns, key decision registries, actionable tasks with assignees and deadlines, professional PDF/DOCX reports, interactive RAG Q&A with grounded citations, and enterprise multi-tenant team collaboration.
+
+---
+
+## 🌐 Live Production Deployment
+
+- 🚀 **Live Web App**: [**https://wrapai-client.onrender.com**](https://wrapai-client.onrender.com)
+- 🔌 **API Gateway**: [**https://wrapai-backend-y44w.onrender.com/api/v1**](https://wrapai-backend-y44w.onrender.com/api/v1)
+- 📖 **Interactive Swagger Docs**: [**https://wrapai-backend-y44w.onrender.com/api/v1/docs**](https://wrapai-backend-y44w.onrender.com/api/v1/docs)
+
+### 🔑 Demo Accounts (Click to auto-fill on login page)
+| Role | Email | Password |
+| :--- | :--- | :--- |
+| **Standard User** | `rahul@wrapai.io` | `Password123!` |
+| **Admin User** | `sarah.jenkins@wrapai.io` | `Password123!` |
 
 ---
 

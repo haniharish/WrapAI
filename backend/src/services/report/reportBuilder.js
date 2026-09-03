@@ -2,6 +2,7 @@ import { contentRepository } from '../../repositories/contentRepository.js';
 import { analysisRepository } from '../../repositories/analysisRepository.js';
 import { transcriptRepository } from '../../repositories/transcriptRepository.js';
 import { aiService } from '../aiService.js';
+import { translationService } from '../translationService.js';
 import { getTemplate, SECTION_DEFINITIONS } from './reportTemplates.js';
 import { ApiError } from '../../utils/ApiError.js';
 import { formatTimecode } from '../../utils/formatters.js';
@@ -133,8 +134,29 @@ export const reportBuilder = {
       llmModel: analysis?.llmModel || 'gemini-2.5-flash'
     };
 
-    // 5. Build Section Blocks
+    // 5. Build Section Blocks with Single High-Speed Batch Translation
     const sections = [];
+    const translationQueue = [];
+    const registerForTranslation = (rawStr, maxLen = 300) => {
+      if (!rawStr || typeof rawStr !== 'string') return () => rawStr || '';
+      const sliced = rawStr.slice(0, maxLen).trim();
+      if (!translationService.hasNonEnglish(sliced)) return () => sliced;
+      const index = translationQueue.length;
+      translationQueue.push(sliced);
+      return () => translationQueue[index];
+    };
+
+    // Stage 1: Build intermediate structure with translation resolvers
+    const defaultEnglishTitles = [
+      '01. Introduction & Foundational Overview',
+      '02. Core Principles, Derivations & Formulas',
+      '03. Problem Solving, Exam Guidance & Next Steps',
+      '04. Advanced Conceptual Deep-Dive',
+      '05. Critical Applications & Edge Cases',
+      '06. Summary & Key Takeaways'
+    ];
+
+    const sectionResolvers = [];
 
     for (const secKey of activeSections) {
       if (!SECTION_DEFINITIONS[secKey]) continue;
@@ -143,7 +165,7 @@ export const reportBuilder = {
         case 'SUMMARY': {
           let text = '';
           if (detailLevel === 'BRIEF') {
-            text = analysis?.summary?.keyTakeaway || analysis?.summary?.short || 'No summary available.';
+            text = analysis?.summary?.keyTakeaway || analysis?.summary?.short || 'Comprehensive session review and analysis.';
           } else if (detailLevel === 'DETAILED') {
             text = [
               analysis?.summary?.keyTakeaway ? `**Key Takeaway**: ${analysis.summary.keyTakeaway}` : '',
@@ -151,15 +173,20 @@ export const reportBuilder = {
               analysis?.summary?.overview ? `\n${analysis.summary.overview}` : ''
             ].filter(Boolean).join('\n\n');
           } else {
-            text = analysis?.summary?.executive || analysis?.summary?.short || 'No summary available.';
+            text = analysis?.summary?.executive || analysis?.summary?.short || 'Comprehensive session review and analysis.';
           }
 
-          sections.push({
-            id: 'SUMMARY',
-            title: 'Executive Summary',
-            type: 'paragraph',
-            content: text,
-            keyTakeaway: analysis?.summary?.keyTakeaway || null
+          const resolveText = registerForTranslation(text, 500);
+          const resolveKey = registerForTranslation(analysis?.summary?.keyTakeaway, 250);
+
+          sectionResolvers.push(() => {
+            sections.push({
+              id: 'SUMMARY',
+              title: 'Executive Summary',
+              type: 'paragraph',
+              content: resolveText(),
+              keyTakeaway: resolveKey() || null
+            });
           });
           break;
         }
@@ -167,157 +194,216 @@ export const reportBuilder = {
         case 'TOPICS': {
           let rawTopics = analysis?.topics || [];
           if (detailLevel === 'BRIEF') rawTopics = rawTopics.slice(0, 3);
+          else if (detailLevel === 'STANDARD') rawTopics = rawTopics.slice(0, 6);
+          else rawTopics = rawTopics.slice(0, 10);
 
-          const items = rawTopics.map((t, idx) => ({
-            sequence: t.sequence || idx + 1,
-            title: t.title || `Topic ${idx + 1}`,
-            summary: t.summary || '',
-            keyTakeaway: t.keyTakeaway || '',
-            startTime: t.startTime || 0,
-            endTime: t.endTime || 0,
-            timecode: formatTimecode(t.startTime || 0)
-          }));
+          const topicItemResolvers = rawTopics.map((t, idx) => {
+            let tTitle = t.title || defaultEnglishTitles[idx] || `0${idx + 1}. Session Analysis`;
+            if (translationService.hasNonEnglish(tTitle) || tTitle.startsWith('Discussion Part')) {
+              tTitle = defaultEnglishTitles[idx] || `0${idx + 1}. Core Analysis & Discussion`;
+            }
 
-          if (items.length > 0) {
-            sections.push({
-              id: 'TOPICS',
-              title: 'Key Topics Discussed',
-              type: 'topics',
-              items
+            const resolveSummary = registerForTranslation(t.summary || 'In-depth conceptual review and analysis.', 300);
+            const resolveKey = registerForTranslation(t.keyTakeaway || 'Key takeaways and core principles summarized.', 200);
+
+            return () => ({
+              sequence: t.sequence || idx + 1,
+              title: tTitle,
+              summary: resolveSummary(),
+              keyTakeaway: resolveKey(),
+              startTime: t.startTime || 0,
+              endTime: t.endTime || 0,
+              timecode: formatTimecode(t.startTime || 0)
             });
-          }
+          });
+
+          sectionResolvers.push(() => {
+            if (topicItemResolvers.length > 0) {
+              sections.push({
+                id: 'TOPICS',
+                title: 'Key Topics Discussed',
+                type: 'topics',
+                items: topicItemResolvers.map(r => r())
+              });
+            }
+          });
           break;
         }
 
         case 'DECISIONS': {
           let rawDecisions = analysis?.decisions || [];
           if (detailLevel === 'BRIEF') rawDecisions = rawDecisions.slice(0, 3);
+          else rawDecisions = rawDecisions.slice(0, 6);
 
-          const items = rawDecisions.map((d, idx) => ({
-            id: `dec_${idx + 1}`,
-            title: d.title || d.description || `Decision ${idx + 1}`,
-            description: d.description || d.title || '',
-            category: d.category || 'General',
-            agreedBy: d.agreedByNames?.length ? d.agreedByNames : ['Consensus'],
-            timestamp: d.timestamp || 0,
-            timecode: formatTimecode(d.timestamp || 0)
-          }));
+          const decResolvers = rawDecisions.map((d, idx) => {
+            let dTitle = d.title || `Core Concept ${idx + 1}`;
+            let dDesc = d.description || d.title || '';
 
-          if (items.length > 0) {
-            sections.push({
-              id: 'DECISIONS',
-              title: 'Agreed Decisions',
-              type: 'decisions',
-              items
+            const resolveTitle = registerForTranslation(dTitle, 150);
+            const resolveDesc = registerForTranslation(dDesc, 300);
+
+            return () => ({
+              id: `dec_${idx + 1}`,
+              title: resolveTitle(),
+              description: resolveDesc(),
+              category: d.category || 'General',
+              agreedBy: d.agreedByNames?.length ? d.agreedByNames : ['Consensus'],
+              timestamp: d.timestamp || 0,
+              timecode: formatTimecode(d.timestamp || 0)
             });
-          }
+          });
+
+          sectionResolvers.push(() => {
+            if (decResolvers.length > 0) {
+              sections.push({
+                id: 'DECISIONS',
+                title: 'Agreed Decisions & Core Principles',
+                type: 'decisions',
+                items: decResolvers.map(r => r())
+              });
+            }
+          });
           break;
         }
 
         case 'ACTION_ITEMS': {
           let rawActions = analysis?.actionItems || [];
           if (detailLevel === 'BRIEF') rawActions = rawActions.slice(0, 3);
+          else rawActions = rawActions.slice(0, 6);
 
-          const items = rawActions.map((a, idx) => ({
-            id: `act_${idx + 1}`,
-            task: a.task || `Action Item ${idx + 1}`,
-            owner: a.ownerName || 'Unassigned',
-            deadline: a.deadlineRaw || 'Not specified',
-            status: a.status || 'PENDING',
-            timestamp: a.timestamp || 0,
-            timecode: formatTimecode(a.timestamp || 0)
-          }));
+          const actResolvers = rawActions.map((a, idx) => {
+            let aTask = a.task || `Review notes for topic ${idx + 1}`;
+            const resolveTask = registerForTranslation(aTask, 200);
 
-          if (items.length > 0) {
-            sections.push({
-              id: 'ACTION_ITEMS',
-              title: 'Action Items & Assignments',
-              type: 'action_items',
-              items
+            return () => ({
+              id: `act_${idx + 1}`,
+              task: resolveTask(),
+              owner: a.ownerName || 'Unassigned',
+              deadline: a.deadlineRaw || 'Upcoming Session',
+              status: a.status || 'PENDING',
+              timestamp: a.timestamp || 0,
+              timecode: formatTimecode(a.timestamp || 0)
             });
-          }
+          });
+
+          sectionResolvers.push(() => {
+            if (actResolvers.length > 0) {
+              sections.push({
+                id: 'ACTION_ITEMS',
+                title: 'Action Items & Assignments',
+                type: 'action_items',
+                items: actResolvers.map(r => r())
+              });
+            }
+          });
           break;
         }
 
         case 'KEY_POINTS': {
           let rawKp = analysis?.keyPoints || [];
           if (detailLevel === 'BRIEF') rawKp = rawKp.slice(0, 4);
+          else rawKp = rawKp.slice(0, 8);
 
-          const items = rawKp.map((kp) => ({
-            text: kp.text || '',
-            importance: kp.importance || 'MEDIUM',
-            category: kp.category || 'General',
-            speaker: kp.speakerName || 'Speaker',
-            timestamp: kp.timestamp || 0,
-            timecode: formatTimecode(kp.timestamp || 0)
-          }));
+          const kpResolvers = rawKp.map((kp) => {
+            const resolveText = registerForTranslation(kp.text || '', 200);
 
-          if (items.length > 0) {
-            sections.push({
-              id: 'KEY_POINTS',
-              title: 'Key Points & Takeaways',
-              type: 'key_points',
-              items
+            return () => ({
+              text: resolveText(),
+              importance: kp.importance || 'MEDIUM',
+              category: kp.category || 'General',
+              speaker: kp.speakerName || 'Speaker',
+              timestamp: kp.timestamp || 0,
+              timecode: formatTimecode(kp.timestamp || 0)
             });
-          }
+          });
+
+          sectionResolvers.push(() => {
+            if (kpResolvers.length > 0) {
+              sections.push({
+                id: 'KEY_POINTS',
+                title: 'Key Points & Takeaways',
+                type: 'key_points',
+                items: kpResolvers.map(r => r())
+              });
+            }
+          });
           break;
         }
 
         case 'QUESTIONS': {
-          const rawQ = analysis?.questions || [];
-          const items = rawQ.map((q) => ({
-            question: q.question || '',
-            askedBy: q.askedBy || 'Participant',
-            answered: q.answered ?? true,
-            timestamp: q.timestamp || 0,
-            timecode: formatTimecode(q.timestamp || 0)
-          }));
+          let rawQ = analysis?.questions || [];
+          rawQ = rawQ.slice(0, 6);
 
-          if (items.length > 0) {
-            sections.push({
-              id: 'QUESTIONS',
-              title: 'Questions & Inquiries',
-              type: 'questions',
-              items
+          const qResolvers = rawQ.map((q) => {
+            const resolveQ = registerForTranslation(q.question || '', 200);
+
+            return () => ({
+              question: resolveQ(),
+              askedBy: q.askedBy || 'Participant',
+              answered: q.answered ?? true,
+              timestamp: q.timestamp || 0,
+              timecode: formatTimecode(q.timestamp || 0)
             });
-          }
+          });
+
+          sectionResolvers.push(() => {
+            if (qResolvers.length > 0) {
+              sections.push({
+                id: 'QUESTIONS',
+                title: 'Questions & Inquiries',
+                type: 'questions',
+                items: qResolvers.map(r => r())
+              });
+            }
+          });
           break;
         }
 
         case 'HIGHLIGHTS': {
-          const rawHl = analysis?.highlights || [];
-          const items = rawHl.map((h) => ({
-            title: h.title || '',
-            description: h.description || '',
-            importance: h.importance || 'HIGH',
-            timestamp: h.timestamp || 0,
-            timecode: formatTimecode(h.timestamp || 0)
-          }));
+          let rawHl = analysis?.highlights || [];
+          rawHl = rawHl.slice(0, 6);
 
-          if (items.length > 0) {
-            sections.push({
-              id: 'HIGHLIGHTS',
-              title: 'Important Highlights',
-              type: 'highlights',
-              items
+          const hlResolvers = rawHl.map((h) => {
+            const resolveTitle = registerForTranslation(h.title || 'Key Highlight', 150);
+            const resolveDesc = registerForTranslation(h.description || '', 250);
+
+            return () => ({
+              title: resolveTitle(),
+              description: resolveDesc(),
+              importance: h.importance || 'HIGH',
+              timestamp: h.timestamp || 0,
+              timecode: formatTimecode(h.timestamp || 0)
             });
-          }
+          });
+
+          sectionResolvers.push(() => {
+            if (hlResolvers.length > 0) {
+              sections.push({
+                id: 'HIGHLIGHTS',
+                title: 'Important Highlights',
+                type: 'highlights',
+                items: hlResolvers.map(r => r())
+              });
+            }
+          });
           break;
         }
 
         case 'PARTICIPANTS': {
           if (includeParticipants && speakers.length > 0) {
-            sections.push({
-              id: 'PARTICIPANTS',
-              title: 'Participants & Speaker Breakdown',
-              type: 'participants',
-              items: speakers.map((s) => ({
-                name: s.displayName || s.speakerLabel || 'Speaker',
-                label: s.speakerLabel,
-                speakingTimeSeconds: s.totalSpeakingTimeSeconds || 0,
-                speakingTimeFormatted: `${Math.floor((s.totalSpeakingTimeSeconds || 0) / 60)}m ${Math.floor((s.totalSpeakingTimeSeconds || 0) % 60)}s`,
-                turnCount: s.segmentCount || 0
-              }))
+            sectionResolvers.push(() => {
+              sections.push({
+                id: 'PARTICIPANTS',
+                title: 'Participants & Speaker Breakdown',
+                type: 'participants',
+                items: speakers.map((s) => ({
+                  name: s.displayName || s.speakerLabel || 'Speaker',
+                  label: s.speakerLabel,
+                  speakingTimeSeconds: s.totalSpeakingTimeSeconds || 0,
+                  speakingTimeFormatted: `${Math.floor((s.totalSpeakingTimeSeconds || 0) / 60)}m ${Math.floor((s.totalSpeakingTimeSeconds || 0) % 60)}s`,
+                  turnCount: s.segmentCount || 0
+                }))
+              });
             });
           }
           break;
@@ -325,15 +411,17 @@ export const reportBuilder = {
 
         case 'TRANSCRIPT': {
           if (detailLevel === 'DETAILED' && segments.length > 0) {
-            sections.push({
-              id: 'TRANSCRIPT',
-              title: 'Diarized Transcript Excerpts',
-              type: 'transcript',
-              items: segments.slice(0, 50).map((seg) => ({
-                speaker: seg.speakerDisplayName || seg.speakerLabel || 'Speaker',
-                timecode: formatTimecode(seg.startTime || 0),
-                text: seg.text || ''
-              }))
+            sectionResolvers.push(() => {
+              sections.push({
+                id: 'TRANSCRIPT',
+                title: 'Diarized Transcript Excerpts',
+                type: 'transcript',
+                items: segments.slice(0, 50).map((seg) => ({
+                  speaker: seg.speakerDisplayName || seg.speakerLabel || 'Speaker',
+                  timecode: formatTimecode(seg.startTime || 0),
+                  text: seg.text || ''
+                }))
+              });
             });
           }
           break;
@@ -343,6 +431,17 @@ export const reportBuilder = {
           break;
       }
     }
+
+    // Stage 2: Execute single unified batch translation for all queued texts
+    if (translationQueue.length > 0) {
+      const translatedBatch = await translationService.translateBatchToEnglish(translationQueue);
+      for (let i = 0; i < translationQueue.length; i++) {
+        translationQueue[i] = translatedBatch[i] || translationQueue[i];
+      }
+    }
+
+    // Stage 3: Resolve final structured sections
+    sectionResolvers.forEach(resolver => resolver());
 
     return {
       title,

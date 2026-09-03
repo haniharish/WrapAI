@@ -1,6 +1,7 @@
 import os
 import shutil
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from app.core.config import settings
 from app.core.logging import logger
 from app.models.schemas import (
@@ -402,4 +403,58 @@ async def generate_rag_answer(request: RAGRequest):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"code": "RAG_FAILED", "message": str(err)}
         )
+
+
+class TranslateRequest(BaseModel):
+    text: str
+    targetLanguage: str = "en"
+    sourceLanguage: str = "auto"
+
+
+class TranslateResponse(BaseModel):
+    success: bool
+    translatedText: str
+
+
+class BatchTranslateRequest(BaseModel):
+    texts: list[str]
+    targetLanguage: str = "en"
+    sourceLanguage: str = "auto"
+
+
+class BatchTranslateResponse(BaseModel):
+    success: bool
+    translatedTexts: list[str]
+
+
+def _translate_single(text: str, source_lang: str = "auto", target_lang: str = "en") -> str:
+    if not text or not text.strip():
+        return ""
+    try:
+        from deep_translator import GoogleTranslator
+        res = GoogleTranslator(source=source_lang, target=target_lang).translate(text.strip()[:400])
+        if res and not res.startswith("Error 500") and not res.startswith("MYMEMORY"):
+            return res
+    except Exception as e:
+        logger.warn(f"Single translation note: {str(e)}")
+    return text
+
+
+@router.post("/translate", response_model=TranslateResponse, tags=["Translation"])
+@router.post("/internal/v1/translate", response_model=TranslateResponse, tags=["Translation"])
+async def translate_text(request: TranslateRequest):
+    res = _translate_single(request.text, request.sourceLanguage, request.targetLanguage)
+    return TranslateResponse(success=True, translatedText=res)
+
+
+@router.post("/translate/batch", response_model=BatchTranslateResponse, tags=["Translation"])
+@router.post("/internal/v1/translate/batch", response_model=BatchTranslateResponse, tags=["Translation"])
+async def batch_translate(request: BatchTranslateRequest):
+    if not request.texts:
+        return BatchTranslateResponse(success=True, translatedTexts=[])
+    
+    results = []
+    for t in request.texts:
+        results.append(_translate_single(t, request.sourceLanguage, request.targetLanguage))
+    return BatchTranslateResponse(success=True, translatedTexts=results)
 

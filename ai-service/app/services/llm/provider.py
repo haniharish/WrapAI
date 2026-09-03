@@ -73,7 +73,12 @@ class HeuristicAnalysisProvider(BaseLLMProvider):
         ).strip()
         key_takeaway = "Core architecture and implementation roadmap were agreed upon with clear milestone owners."
 
-        # 2. Topic Extraction
+        # 2. Topic Extraction (English Title Standards)
+        topic_titles = [
+            "01. Introduction & Foundational Overview",
+            "02. In-Depth Concepts & Technical Breakdown",
+            "03. Problem Solving, Key Insights & Next Steps"
+        ]
         topics: List[TopicItem] = []
         if len(segments) > 0:
             chunk_size = max(1, len(segments) // 3)
@@ -82,12 +87,12 @@ class HeuristicAnalysisProvider(BaseLLMProvider):
                 if sub_segs:
                     topics.append(
                         TopicItem(
-                            title=f"Discussion Part {t_idx + 1}: {sub_segs[0].text[:35]}...",
+                            title=topic_titles[t_idx] if t_idx < len(topic_titles) else f"0{t_idx + 1}. Session Analysis & Review",
                             summary=" ".join(s.text for s in sub_segs[:2]),
                             startTime=sub_segs[0].startTime,
                             endTime=sub_segs[-1].endTime,
                             sequence=t_idx + 1,
-                            keyTakeaway=f"Key consensus reached during part {t_idx + 1}."
+                            keyTakeaway=f"Core concepts, derivations, and analysis covered in part {t_idx + 1}."
                         )
                     )
 

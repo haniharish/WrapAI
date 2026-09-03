@@ -1,6 +1,7 @@
 import { config } from '../config/environment.js';
 import { ApiError } from '../utils/ApiError.js';
 import { logger } from '../utils/logger.js';
+import { translationService } from './translationService.js';
 
 export const aiService = {
   /**
@@ -318,94 +319,129 @@ function _heuristicTranscriptionFallback(contentId, language) {
   };
 }
 
-function _heuristicAnalysisFallback(contentId, title, language, durationSeconds, speakers, segments) {
+async function _heuristicAnalysisFallback(contentId, title, language, durationSeconds, speakers, segments) {
   const speakerNames = speakers.length > 0
     ? speakers.map((s) => s.displayName || s.speakerLabel)
     : ['Speaker 1'];
 
-  // If segments exist, extract text dynamically from the actual transcript
+  // Clean and translate title to English if needed
+  const cleanTitle = translationService.hasNonEnglish(title)
+    ? await translationService.translateToEnglish(title)
+    : title;
+
+  // Extract and translate text dynamically from the actual transcript
   const allTexts = segments.map((s) => s.text).filter(Boolean);
   const totalSegments = segments.length;
 
-  let keyTakeaway = `Comprehensive briefing covering '${title}'. Key milestones, announcements, and action items were reviewed.`;
-  let executiveSummary = `This session focused on '${title}'. Key topics were presented with structured updates, actionable deliverables, and clear timelines.`;
-  let detailedSummary = `Discussion and analysis of '${title}'. The presentation highlighted core principles, critical updates, and necessary next steps for participants.`;
+  let keyTakeaway = `Comprehensive briefing covering '${cleanTitle}'. Key milestones, announcements, and core principles were reviewed.`;
+  let executiveSummary = `This session focused on '${cleanTitle}'. Key topics were presented with structured updates, actionable deliverables, and clear timelines.`;
+  let detailedSummary = `Discussion and analysis of '${cleanTitle}'. The presentation highlighted core principles, critical updates, and necessary next steps for participants.`;
 
   if (allTexts.length > 0) {
-    const firstFew = allTexts.slice(0, 3).join(' ');
-    const middleFew = allTexts.slice(Math.floor(totalSegments / 3), Math.floor(totalSegments / 3) + 3).join(' ');
-    const lastFew = allTexts.slice(-3).join(' ');
+    let firstFew = allTexts.slice(0, 3).join(' ');
+    let middleFew = allTexts.slice(Math.floor(totalSegments / 3), Math.floor(totalSegments / 3) + 3).join(' ');
+    let lastFew = allTexts.slice(-3).join(' ');
 
-    keyTakeaway = `Key Takeaway: ${firstFew.slice(0, 220)}...`;
-    executiveSummary = `Executive Summary for '${title}': ${firstFew} ${middleFew}`.slice(0, 500) + '...';
-    detailedSummary = `Overview of '${title}':\n\n1. Opening Context: ${firstFew}\n\n2. Core Analysis: ${middleFew}\n\n3. Actionable Conclusion: ${lastFew}`;
+    if (translationService.hasNonEnglish(firstFew)) {
+      firstFew = await translationService.translateToEnglish(firstFew);
+    }
+    if (translationService.hasNonEnglish(middleFew)) {
+      middleFew = await translationService.translateToEnglish(middleFew);
+    }
+    if (translationService.hasNonEnglish(lastFew)) {
+      lastFew = await translationService.translateToEnglish(lastFew);
+    }
+
+    keyTakeaway = `Key Takeaway: ${firstFew.slice(0, 240)}...`;
+    executiveSummary = `Executive Summary for '${cleanTitle}': ${firstFew} ${middleFew}`.slice(0, 500) + '...';
+    detailedSummary = `Overview of '${cleanTitle}':\n\n1. Foundational Context: ${firstFew}\n\n2. In-Depth Analysis: ${middleFew}\n\n3. Actionable Conclusion: ${lastFew}`;
   }
 
-  // Generate dynamic topics based on segment timeline bounds
+  // Generate dynamic English topics based on segment timeline bounds
   const topics = [];
   if (totalSegments > 0) {
     const chunk1End = Math.max(1, Math.floor(totalSegments * 0.35));
     const chunk2End = Math.max(chunk1End + 1, Math.floor(totalSegments * 0.7));
 
+    let t1Summary = allTexts.slice(0, chunk1End).join(' ').slice(0, 180);
+    if (translationService.hasNonEnglish(t1Summary)) {
+      t1Summary = await translationService.translateToEnglish(t1Summary);
+    }
+
     topics.push({
-      title: '01. Overview & Introductory Context',
-      summary: (allTexts.slice(0, chunk1End).join(' ').slice(0, 180) || 'Introduction and foundational context.') + '...',
+      title: '01. Overview & Foundational Concepts',
+      summary: (t1Summary || 'Foundational principles and introductory overview.') + '...',
       startTime: segments[0]?.startTime || 0,
       endTime: segments[chunk1End - 1]?.endTime || (durationSeconds * 0.35),
       sequence: 1,
-      keyTakeaway: allTexts[0]?.slice(0, 140) || 'Core introductory points established.'
+      keyTakeaway: 'Core introductory concepts and foundational principles established.'
     });
 
     if (totalSegments > 3) {
+      let t2Summary = allTexts.slice(chunk1End, chunk2End).join(' ').slice(0, 180);
+      if (translationService.hasNonEnglish(t2Summary)) {
+        t2Summary = await translationService.translateToEnglish(t2Summary);
+      }
+
       topics.push({
         title: '02. Detailed Discussion & Core Breakdown',
-        summary: (allTexts.slice(chunk1End, chunk2End).join(' ').slice(0, 180) || 'In-depth analysis and key discussion areas.') + '...',
+        summary: (t2Summary || 'In-depth analysis, formulas, and methodologies.') + '...',
         startTime: segments[chunk1End]?.startTime || (durationSeconds * 0.35),
         endTime: segments[chunk2End - 1]?.endTime || (durationSeconds * 0.7),
         sequence: 2,
-        keyTakeaway: allTexts[chunk1End]?.slice(0, 140) || 'Critical updates and guidelines reviewed.'
+        keyTakeaway: 'Detailed breakdown, derivations, and methodology explained.'
       });
 
+      let t3Summary = allTexts.slice(chunk2End).join(' ').slice(0, 180);
+      if (translationService.hasNonEnglish(t3Summary)) {
+        t3Summary = await translationService.translateToEnglish(t3Summary);
+      }
+
       topics.push({
-        title: '03. Key Decisions & Next Steps',
-        summary: (allTexts.slice(chunk2End).join(' ').slice(0, 180) || 'Summary of action items, deadlines, and final recommendations.') + '...',
+        title: '03. Problem Solving, Exam Guidance & Next Steps',
+        summary: (t3Summary || 'Summary of problem-solving techniques, practice questions, and next steps.') + '...',
         startTime: segments[chunk2End]?.startTime || (durationSeconds * 0.7),
         endTime: segments[totalSegments - 1]?.endTime || durationSeconds,
         sequence: 3,
-        keyTakeaway: allTexts[totalSegments - 1]?.slice(0, 140) || 'Action items and milestone deadlines agreed.'
+        keyTakeaway: 'Key problem-solving patterns and critical takeaways summarized.'
       });
     }
   } else {
     topics.push({
-      title: '01. Strategic Review',
-      summary: `Overview and review of ${title}.`,
+      title: '01. Strategic Review & Analysis',
+      summary: `Overview and systematic review of ${cleanTitle}.`,
       startTime: 0,
       endTime: durationSeconds,
       sequence: 1,
-      keyTakeaway: 'All key parameters confirmed.'
+      keyTakeaway: 'All key parameters and topics analyzed.'
     });
   }
 
-  // Key Points
+  // Key Points in English
   const keyPoints = [];
   const sampleIndices = [0, Math.floor(totalSegments * 0.25), Math.floor(totalSegments * 0.5), Math.floor(totalSegments * 0.75)].filter((idx) => idx < totalSegments);
 
-  sampleIndices.forEach((idx, i) => {
+  for (let i = 0; i < sampleIndices.length; i++) {
+    const idx = sampleIndices[i];
     const seg = segments[idx];
     if (seg && seg.text) {
+      let rawKpText = seg.text.slice(0, 180);
+      if (translationService.hasNonEnglish(rawKpText)) {
+        rawKpText = await translationService.translateToEnglish(rawKpText);
+      }
       keyPoints.push({
-        text: seg.text.slice(0, 180),
+        text: rawKpText,
         importance: i === 0 || i === 2 ? 'HIGH' : 'MEDIUM',
         timestamp: seg.startTime || 0,
         speakerName: seg.speakerDisplayName || speakerNames[0] || 'Speaker 1',
         category: 'Intelligence'
       });
     }
-  });
+  }
 
   if (keyPoints.length === 0) {
     keyPoints.push({
-      text: `Key insights and discussion points established for ${title}.`,
+      text: `Key insights and core principles established for ${cleanTitle}.`,
       importance: 'HIGH',
       timestamp: 0,
       speakerName: speakerNames[0] || 'Speaker 1',
@@ -416,8 +452,8 @@ function _heuristicAnalysisFallback(contentId, title, language, durationSeconds,
   // Decisions
   const decisions = [
     {
-      title: 'Roadmap & Implementation Approved',
-      description: `The key updates and timelines presented for '${title}' were reviewed and approved.`,
+      title: 'Methodology & Key Concepts Approved',
+      description: `The core principles and guidance presented in '${cleanTitle}' were reviewed and established.`,
       timestamp: segments[0]?.startTime || 0,
       category: 'Governance',
       agreedByNames: speakerNames
@@ -427,9 +463,9 @@ function _heuristicAnalysisFallback(contentId, title, language, durationSeconds,
   // Action items
   const actionItems = [
     {
-      task: `Review notes and complete preparation tasks for ${title}`,
-      ownerName: speakerNames[0] || 'Candidate / Team',
-      deadlineRaw: 'Upcoming Deadline',
+      task: `Review lecture notes and practice problem sets for ${cleanTitle}`,
+      ownerName: speakerNames[0] || 'Candidate / Student',
+      deadlineRaw: 'Upcoming Session',
       status: 'PENDING',
       timestamp: segments[0]?.startTime || 0
     }
@@ -438,7 +474,7 @@ function _heuristicAnalysisFallback(contentId, title, language, durationSeconds,
   // Highlights
   const highlights = [
     {
-      title: 'Core Announcement & Update',
+      title: 'Core Concept Explanation',
       description: keyTakeaway,
       timestamp: segments[0]?.startTime || 0,
       importance: 'HIGH'

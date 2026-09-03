@@ -89,7 +89,13 @@ export const youtubeService = {
 
     logger.info(`Fetching YouTube transcript for video ${videoId}`);
 
-    const rawItems = await YoutubeTranscript.fetchTranscript(url);
+    let rawItems = [];
+    try {
+      rawItems = await YoutubeTranscript.fetchTranscript(url, { lang: 'en' });
+    } catch {
+      rawItems = await YoutubeTranscript.fetchTranscript(url);
+    }
+
     if (!rawItems || rawItems.length === 0) {
       throw new Error('No transcript or captions available for this YouTube video.');
     }

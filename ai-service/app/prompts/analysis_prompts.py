@@ -13,7 +13,8 @@ CRITICAL INSTRUCTIONS & CONSTRAINTS:
 4. SPEAKERS: Use the provided speaker names. Do NOT fabricate real-world personal identities.
 5. DECISIONS VS SUGGESTIONS: Only classify an item as a DECISION if there is explicit consensus or agreement in the transcript. Otherwise, classify it as discussion or key point.
 6. ACTION ITEMS: Extract clear actionable tasks. If no assignee is mentioned, set ownerName to 'Unassigned' or null. If no deadline is stated, set deadlineRaw to null.
-7. OUTPUT FORMAT: Return ONLY a valid, parseable JSON object matching the requested schema. Do not enclose in markdown blocks if requested as raw JSON.
+7. ENGLISH OUTPUT MANDATE: Regardless of the source language (Hindi, Hinglish, Spanish, French, German, Telugu, etc.), ALWAYS generate all summaries, topics, key points, decisions, action items, questions, and reports in clear, professional, fluent ENGLISH.
+8. OUTPUT FORMAT: Return ONLY a valid, parseable JSON object matching the requested schema. Do not enclose in markdown blocks if requested as raw JSON.
 """
 
 ANALYSIS_USER_PROMPT_TEMPLATE = """Analyze the following transcript content for "{title}" ({duration_str}, {speakers_count} speakers).

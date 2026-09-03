@@ -63,6 +63,7 @@ class SpeechToTextService:
 
         segments_iter, info = model.transcribe(
             audio_path,
+            task="translate",
             language=lang_arg,
             vad_filter=settings.WHISPER_VAD_FILTER,
             word_timestamps=False

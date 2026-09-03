@@ -63,7 +63,13 @@ export const config = {
     shareExpirationDays: parseInt(process.env.REPORT_SHARE_EXPIRATION_DAYS, 10) || 7
   },
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, server-to-server) or from valid frontend domains
+      if (!origin || origin.includes('localhost') || origin.includes('onrender.com')) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     credentials: true
   }
 };

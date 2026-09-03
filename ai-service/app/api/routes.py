@@ -442,19 +442,24 @@ def _translate_single(text: str, source_lang: str = "auto", target_lang: str = "
 
 @router.post("/translate", response_model=TranslateResponse, tags=["Translation"])
 @router.post("/internal/v1/translate", response_model=TranslateResponse, tags=["Translation"])
-async def translate_text(request: TranslateRequest):
+def translate_text(request: TranslateRequest):
     res = _translate_single(request.text, request.sourceLanguage, request.targetLanguage)
     return TranslateResponse(success=True, translatedText=res)
 
 
 @router.post("/translate/batch", response_model=BatchTranslateResponse, tags=["Translation"])
 @router.post("/internal/v1/translate/batch", response_model=BatchTranslateResponse, tags=["Translation"])
-async def batch_translate(request: BatchTranslateRequest):
+def batch_translate(request: BatchTranslateRequest):
     if not request.texts:
         return BatchTranslateResponse(success=True, translatedTexts=[])
     
-    results = []
-    for t in request.texts:
-        results.append(_translate_single(t, request.sourceLanguage, request.targetLanguage))
+    from concurrent.futures import ThreadPoolExecutor
+    def _tr_item(t: str) -> str:
+        return _translate_single(t, request.sourceLanguage, request.targetLanguage)
+
+    max_w = min(6, max(1, len(request.texts)))
+    with ThreadPoolExecutor(max_workers=max_w) as executor:
+        results = list(executor.map(_tr_item, request.texts))
+
     return BatchTranslateResponse(success=True, translatedTexts=results)
 

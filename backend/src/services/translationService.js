@@ -27,9 +27,9 @@ export const translationService = {
 
     try {
       // 1. Primary: Python AI microservice deep-translator
-      const aiUrl = config.aiService?.url || 'http://localhost:8000';
+      const aiUrl = config.aiService?.url || 'http://127.0.0.1:8000';
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
 
       const res = await fetch(`${aiUrl}/translate`, {
         method: 'POST',
@@ -67,10 +67,26 @@ export const translationService = {
     const needsTranslation = texts.some(t => this.hasNonEnglish(t));
     if (!needsTranslation) return texts;
 
+    // Chunk into sub-batches of 35 for ultra-fast, reliable network processing
+    const chunkSize = 35;
+    if (texts.length > chunkSize) {
+      const allResults = [];
+      for (let i = 0; i < texts.length; i += chunkSize) {
+        const chunk = texts.slice(i, i + chunkSize);
+        const translatedChunk = await this._translateSubBatch(chunk);
+        allResults.push(...translatedChunk);
+      }
+      return allResults;
+    }
+
+    return this._translateSubBatch(texts);
+  },
+
+  async _translateSubBatch(texts) {
     try {
-      const aiUrl = config.aiService?.url || 'http://localhost:8000';
+      const aiUrl = config.aiService?.url || 'http://127.0.0.1:8000';
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12000);
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
       const res = await fetch(`${aiUrl}/translate/batch`, {
         method: 'POST',

@@ -25,7 +25,7 @@ export const config = {
     mockFailure: process.env.MOCK_PROCESSING_FAILURE === 'true'
   },
   aiService: {
-    url: process.env.AI_SERVICE_URL || 'http://localhost:8000',
+    url: (process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000').replace('localhost', '127.0.0.1'),
     apiKey: process.env.AI_SERVICE_API_KEY || 'wrapai_internal_ai_service_secret_key_minimum_32_chars_2026',
     timeoutMs: parseInt(process.env.AI_SERVICE_TIMEOUT_MS, 10) || 600000
   },

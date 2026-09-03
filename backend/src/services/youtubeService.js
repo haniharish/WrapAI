@@ -1,5 +1,6 @@
 import { YoutubeTranscript } from 'youtube-transcript';
 import { logger } from '../utils/logger.js';
+import { translationService } from './translationService.js';
 
 export const youtubeService = {
   /**
@@ -161,9 +162,21 @@ export const youtubeService = {
       segments.push(currentBlock);
     }
 
+    // Universal English Translation: Translate any Hindi or non-English segments into English
+    if (segments.some(s => translationService.hasNonEnglish(s.text))) {
+      logger.info(`Translating ${segments.length} YouTube transcript segments to English...`);
+      const textsToTranslate = segments.map(s => s.text);
+      const translatedTexts = await translationService.translateBatchToEnglish(textsToTranslate);
+      segments.forEach((seg, i) => {
+        if (translatedTexts[i]) {
+          seg.text = translatedTexts[i];
+        }
+      });
+    }
+
     return {
       contentId: null,
-      language: rawItems[0]?.lang || 'en',
+      language: 'en',
       durationSeconds: Math.ceil(totalDuration),
       wordCount: totalWordCount,
       speakersCount: 1,

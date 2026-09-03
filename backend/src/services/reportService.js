@@ -103,7 +103,20 @@ export const reportService = {
       logger.warn('Failed to enqueue report to BullMQ, falling back to direct execution', { error: err.message });
     }
 
-    // In test or local synchronous mode, generate right away
+    // Dynamic self-healing generation trigger:
+    // Ensures immediate asynchronous document compilation and storage upload even if standalone worker daemon is offline
+    setTimeout(async () => {
+      try {
+        const fresh = await reportRepository.findById(reportDoc._id);
+        if (fresh && fresh.status === REPORT_STATUS.QUEUED) {
+          await this.executeReportGeneration(reportDoc._id.toString());
+        }
+      } catch (err) {
+        logger.error('Background report generation error:', { error: err.message });
+      }
+    }, 50);
+
+    // In test synchronous mode, await generation right away
     if (process.env.NODE_ENV === 'test') {
       await this.executeReportGeneration(reportDoc._id.toString());
       return reportRepository.findById(reportDoc._id);

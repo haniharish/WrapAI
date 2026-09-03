@@ -1,6 +1,7 @@
 import { contentRepository } from '../../repositories/contentRepository.js';
 import { analysisRepository } from '../../repositories/analysisRepository.js';
 import { transcriptRepository } from '../../repositories/transcriptRepository.js';
+import { aiService } from '../aiService.js';
 import { getTemplate, SECTION_DEFINITIONS } from './reportTemplates.js';
 import { ApiError } from '../../utils/ApiError.js';
 import { formatTimecode } from '../../utils/formatters.js';
@@ -38,7 +39,7 @@ export const reportBuilder = {
     }
 
     // 2. Fetch Analysis & Transcript & Speakers in parallel
-    const [analysis, transcriptBundle] = await Promise.all([
+    let [analysis, transcriptBundle] = await Promise.all([
       analysisRepository.findByContentId(contentId),
       transcriptRepository.findByContentId(contentId)
     ]);
@@ -46,6 +47,52 @@ export const reportBuilder = {
     const transcript = transcriptBundle?.transcript || null;
     const speakers = transcriptBundle?.speakers || [];
     const segments = transcriptBundle?.segments || [];
+
+    // If analysis does not exist yet, generate it on demand using AI service!
+    if (!analysis) {
+      try {
+        const rawSegments = segments.length > 0 ? segments : [
+          { startTime: 0, endTime: content.mediaDurationSeconds || 60, text: content.description || content.title, sequence: 1 }
+        ];
+        const synthesized = await aiService.requestAnalysis({
+          contentId: content._id.toString(),
+          title: content.title,
+          language: content.language || 'en',
+          durationSeconds: content.mediaDurationSeconds || 0,
+          speakers: speakers.map(s => ({
+            speakerLabel: s.speakerLabel,
+            displayName: s.displayName,
+            totalSpeakingTime: s.totalSpeakingTimeSeconds || 0,
+            segmentCount: s.segmentCount || 0,
+            color: s.avatarColor || '#1351AA'
+          })),
+          segments: rawSegments
+        });
+
+        if (synthesized) {
+          analysis = await analysisRepository.createAnalysis({
+            contentId: content._id,
+            transcriptId: transcript?._id || null,
+            version: 1,
+            contentCategory: synthesized.contentCategory || 'GENERAL',
+            summary: synthesized.summary,
+            topics: synthesized.topics || [],
+            keyPoints: synthesized.keyPoints || [],
+            decisions: synthesized.decisions || [],
+            actionItems: synthesized.actionItems || [],
+            questions: synthesized.questions || [],
+            highlights: synthesized.highlights || [],
+            llmProvider: synthesized.llmProvider || 'heuristic',
+            llmModel: synthesized.llmModel || 'gemini-2.5-flash',
+            promptVersion: synthesized.promptVersion || 'v1.0',
+            tokenUsage: synthesized.tokenUsage || { totalTokens: 0 },
+            status: 'COMPLETED'
+          });
+        }
+      } catch (synthErr) {
+        // Fallback gracefully
+      }
+    }
 
     // 3. Resolve Template and Sections
     const template = getTemplate(templateId);
